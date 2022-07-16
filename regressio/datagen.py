@@ -2,6 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 def generate_random_walk(n, noise=1, plot=False):
+    '''
+    Given a number of data points n, 
+    returns a numpy array of a random walk with length n. 
+    '''
     if n < 1:
         raise ValueError('n must be >= 1')
     x = np.arange(n, dtype=np.float64).reshape([-1,1])

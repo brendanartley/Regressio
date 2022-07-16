@@ -2,9 +2,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class polynomial_regression():
+    '''
+    Polynomial regression model up to the 10th degree. 
+    - Degree > 10 is numerically unstable in OLS calculation.
+    '''
     def __init__(self, degree):
         self.degree = self.check_degree(degree)
-        self.ws = np.random.random(size=degree).astype(np.float128)
+        self.ws = None
         self.range = [-1,1]
         self.rmse = None
 
@@ -42,6 +46,12 @@ class polynomial_regression():
         self.ws = ws
         self.plot_model(rawx, y, training_mse)
 
+    def predict(self, x):
+        if self.ws is None:
+            raise ValueError('Must fit the model first.')
+        values = np.hstack([self.ws[i] * (x ** i) for i in range(0, len(self.ws))])
+        preds = np.sum(values, axis=-1)
+        return preds
 
     def MSE(self, x, y):
         y_hat = x.dot(self.ws)
