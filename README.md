@@ -22,7 +22,7 @@ Linear regression.
     model = linear_regression(10)
     model.fit(x, y, plot=True)
 ```
-<img alt="Linear Regression" src="imgs/linreg.png" width="500">
+<img alt="Linear Regression" src="imgs/linreg.png" width="600">
 
 Isotonic regression.
 
@@ -40,6 +40,6 @@ Isotonic regression.
     model = isotonic_regression(10)
     model.fit(x, y, plot=True)
 ```
-<img alt="Isotonic Regression" src="imgs/isoreg.png" width="500">
+<img alt="Isotonic Regression" src="imgs/isoreg.png" width="600">
 
 More examples to come in the [notebooks folder](notebooks/).
