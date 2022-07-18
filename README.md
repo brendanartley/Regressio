@@ -9,37 +9,37 @@ A simple python library of regression models.
 Linear regression.
 
 ```
-    import numpy as np
-    import matplotlib.pyplot as plt
-    from regressio.models import linear_regression
-    from regressio.datagen import generate_random_walk
-    
-    np.random.seed(1)
-    plt.rcParams['figure.figsize'] = (10, 5)
+import numpy as np
+import matplotlib.pyplot as plt
+from regressio.models import linear_regression
+from regressio.datagen import generate_random_walk
 
-    x, y = generate_random_walk(100)
+np.random.seed(1)
+plt.rcParams['figure.figsize'] = (10, 5)
 
-    model = linear_regression(10)
-    model.fit(x, y, plot=True)
+x, y = generate_random_walk(100)
+
+model = linear_regression(10)
+model.fit(x, y, plot=True)
 ```
-<img alt="Linear Regression" src="imgs/linreg.png" width="600">
+<img alt="Linear Regression" src="imgs/linreg.png" width="550">
 
 Isotonic regression.
 
 ```
-    import numpy as np
-    import matplotlib.pyplot as plt
-    from regressio.models import isotonic_regression
-    from regressio.datagen import generate_isotonic_sample
-    
-    np.random.seed(1)
-    plt.rcParams['figure.figsize'] = (10, 5)
+import numpy as np
+import matplotlib.pyplot as plt
+from regressio.models import isotonic_regression
+from regressio.datagen import generate_isotonic_sample
 
-    x, y = generate_isotonic_sample(100)
+np.random.seed(1)
+plt.rcParams['figure.figsize'] = (10, 5)
 
-    model = isotonic_regression(10)
-    model.fit(x, y, plot=True)
+x, y = generate_isotonic_sample(100)
+
+model = isotonic_regression(10)
+model.fit(x, y, plot=True)
 ```
-<img alt="Isotonic Regression" src="imgs/isoreg.png" width="600">
+<img alt="Isotonic Regression" src="imgs/isoreg.png" width="550">
 
 More examples to come in the [notebooks folder](notebooks/).
