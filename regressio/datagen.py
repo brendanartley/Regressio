@@ -16,7 +16,12 @@ def generate_random_walk(n, noise=1, plot=False):
     return x, y
 
 def generate_isotonic_sample(n, noise=1, plot=False):
+    '''
+    Given a number of data points n, returns a numpy array of a sample that increases.
+    Note: Noise is added so the sample is NOT strictly increasing.
+    '''
     def gen(x):
+        # Creates periods of varying rates of increase
         if (x%10)%2 == 0:
             return np.random.choice([0, 0.25, 0.5], p=[0.8,0.15,0.05])
         else:
