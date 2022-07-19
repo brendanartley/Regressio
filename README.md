@@ -17,14 +17,32 @@ from regressio.datagen import generate_random_walk
 np.random.seed(1)
 plt.rcParams['figure.figsize'] = (10, 5)
 
-x, y = generate_random_walk(100)
+x, y = generate_random_walk(n=100)
 
 model = linear_regression(degree=10)
 model.fit(x, y, plot=True)
 ```
-<img alt="Linear Regression" src="imgs/linreg.png" width="550">
+<img alt="Linear Regression" src="imgs/linear_regression.png" width="550">
 
-Isotonic regression.
+Linear Interpolation (aka. Piecewise Linear Regression).
+
+```
+import numpy as np
+import matplotlib.pyplot as plt
+from regressio.models import linear_interpolation
+from regressio.datagen import generate_random_walk
+
+np.random.seed(2)
+plt.rcParams['figure.figsize'] = (10, 5)
+
+x, y = generate_random_walk(n=100)
+
+model = linear_interpolation(knots=10)
+model.fit(x, y, plot=True)
+```
+<img alt="Isotonic Regression" src="imgs/linear_interpolation.png" width="550">
+
+Isotonic regression. Strictly increasing linear interpolation.
 
 ```
 import numpy as np
@@ -32,14 +50,14 @@ import matplotlib.pyplot as plt
 from regressio.models import isotonic_regression
 from regressio.datagen import generate_isotonic_sample
 
-np.random.seed(1)
+np.random.seed(4)
 plt.rcParams['figure.figsize'] = (10, 5)
 
-x, y = generate_isotonic_sample(100)
+x, y = generate_isotonic_sample(n=100)
 
 model = isotonic_regression(knots=10)
 model.fit(x, y, plot=True)
 ```
-<img alt="Isotonic Regression" src="imgs/isoreg.png" width="550">
+<img alt="Isotonic Regression" src="imgs/isotonic_regression.png" width="550">
 
 More examples to come in the [notebooks folder](notebooks/).
