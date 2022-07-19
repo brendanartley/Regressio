@@ -19,7 +19,7 @@ plt.rcParams['figure.figsize'] = (10, 5)
 
 x, y = generate_random_walk(100)
 
-model = linear_regression(10)
+model = linear_regression(degree=10)
 model.fit(x, y, plot=True)
 ```
 <img alt="Linear Regression" src="imgs/linreg.png" width="550">
@@ -37,7 +37,7 @@ plt.rcParams['figure.figsize'] = (10, 5)
 
 x, y = generate_isotonic_sample(100)
 
-model = isotonic_regression(10)
+model = isotonic_regression(knots=10)
 model.fit(x, y, plot=True)
 ```
 <img alt="Isotonic Regression" src="imgs/isoreg.png" width="550">

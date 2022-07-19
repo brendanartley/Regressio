@@ -13,7 +13,7 @@ plt.rcParams['figure.figsize'] = (10, 5)
 def main():
     x, y = generate_random_walk(100)
 
-    model = linear_regression(10)
+    model = linear_regression(degree=10)
     model.fit(x, y, plot=True)
     return
     
