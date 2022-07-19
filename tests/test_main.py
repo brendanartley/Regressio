@@ -1,8 +1,7 @@
 import pytest
 import numpy as np
 from regressio.datagen import generate_random_walk
-from regressio.models import linear_regression, linear_interpolation, isotonic_regression
-
+from regressio.models import *
 '''
 Pytest:
 - prefix your class with 'Test', and functions with 'test' otherwise they will be skipped.
@@ -42,4 +41,11 @@ class Test_isotonic_regression:
         with pytest.raises(ValueError):
             x, y = np.arange(20), np.cumsum(np.ones(20))
             model = isotonic_regression(21)
+            model.fit(x, y)
+
+class Test_bin_regression: 
+    def test_no_data_in_knot(self):
+        with pytest.raises(ValueError):
+            x, y = np.arange(20), np.cumsum(np.ones(20))
+            model = bin_regression(21)
             model.fit(x, y)

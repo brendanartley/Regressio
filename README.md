@@ -19,7 +19,7 @@ plt.rcParams['figure.figsize'] = (10, 5)
 
 x, y = generate_random_walk(n=100)
 
-model = linear_regression(degree=10)
+model = linear_regression(degree=5)
 model.fit(x, y, plot=True)
 ```
 <img alt="Linear Regression" src="imgs/linear_regression.png" width="550">
@@ -40,7 +40,7 @@ x, y = generate_random_walk(n=100)
 model = linear_interpolation(knots=10)
 model.fit(x, y, plot=True)
 ```
-<img alt="Isotonic Regression" src="imgs/linear_interpolation.png" width="550">
+<img alt="Linear Interpolation" src="imgs/linear_interpolation.png" width="550">
 
 Isotonic regression. Strictly increasing linear interpolation.
 
@@ -55,9 +55,27 @@ plt.rcParams['figure.figsize'] = (10, 5)
 
 x, y = generate_isotonic_sample(n=100)
 
-model = isotonic_regression(knots=10)
+model = isotonic_regression(knots=12)
 model.fit(x, y, plot=True)
 ```
 <img alt="Isotonic Regression" src="imgs/isotonic_regression.png" width="550">
+
+Bin regression.
+
+```
+import numpy as np
+import matplotlib.pyplot as plt
+from regressio.models import bin_regression
+from regressio.datagen import generate_random_walk
+
+np.random.seed(5)
+plt.rcParams['figure.figsize'] = (10, 5)
+
+x, y = generate_random_walk(n=100)
+
+model = isotonic_regression(knots=8)
+model.fit(x, y, plot=True)
+```
+<img alt="Bin Regression" src="imgs/bin_regression.png" width="550">
 
 More examples to come in the [notebooks folder](notebooks/).
