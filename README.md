@@ -50,6 +50,7 @@ import matplotlib.pyplot as plt
 from regressio.models import isotonic_regression
 from regressio.datagen import generate_isotonic_sample
 
+
 np.random.seed(4)
 plt.rcParams['figure.figsize'] = (10, 5)
 

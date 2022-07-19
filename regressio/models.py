@@ -93,7 +93,7 @@ class linear_interpolation():
         self.slopes = np.zeros(knots) # stores piecewise linear model slopes
         self.last_binvals = np.zeros(knots+1) # stores last y-value in each bin
         self.bins = None #set bin values model.fit()
-
+        
     def fit(self, x, y, plot=False):
         '''
         Given input arrays x and y. Fits the model.
@@ -162,14 +162,14 @@ class linear_interpolation():
                         preds[i] = self.line(x_raw, self.slopes[j], self.last_binvals[j])
                         broke = True
                         break
-                    # shift x until the left of bin at origin
                     else:
+                        # shift x until the left of bin at origin
                         x_raw -= self.bins[1] - self.bins[0]
                 # if x > last_bin set to last_binval
                 if broke == False:
                     preds[i] = self.last_binvals[j+1]
         return preds
-
+        
     def OLS_linear_interpolation(self, x, y, first=False):
         x = x.reshape(-1,1)
         if first:
@@ -209,7 +209,7 @@ class linear_interpolation():
         # Need >0 non-zero values in matrix
         if np.sum(bin_x) == 0:
             raise ValueError('Need at least 1 non 0 value in bin xs')
-
+            
     @staticmethod
     def line(x, slope, intercept):
         '''
@@ -320,7 +320,7 @@ class bin_regression():
                 if broke == False:
                     preds[i] = self.bin_vals[-1]
         return preds
-
+        
     def plot_model(self, x, y):
         '''
         Plots the models hypothetical predictions, MSE, and true data points.

@@ -2,6 +2,7 @@ import pytest
 import numpy as np
 from regressio.datagen import generate_random_walk
 from regressio.models import *
+
 '''
 Pytest:
 - prefix your class with 'Test', and functions with 'test' otherwise they will be skipped.
@@ -28,7 +29,7 @@ class Test_linear_regression:
     def test_degree_less_than_10(self):
         with pytest.raises(ValueError):
             model = linear_regression(-1)
-
+            
 class Test_linear_interpolation: 
     def test_no_data_in_knot(self):
         with pytest.raises(ValueError):
