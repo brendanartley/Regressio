@@ -81,12 +81,12 @@ class linear_regression():
         
         # -- Plots model prediction line --
         plt.scatter(modelx, modely, s=5, color='tab:orange')
-        plt.title("Linear Regression, Degree: {}, MSE: {:.8f}".format(self.degree, training_mse))
+        plt.title("{}, Degree: {}, MSE: {:.8f}".format(type(self).__name__, self.degree, training_mse))
         plt.show()
 
-class isotonic_regression():
+class linear_interpolation():
     '''
-    Isotonic regression model. 
+    Linear interpolation model. 
     '''
     def __init__(self, knots):
         self.knots = knots # number of kknots
@@ -94,7 +94,6 @@ class isotonic_regression():
         self.last_binvals = np.zeros(knots+1) # stores last y-value in each bin
         self.bins = None #set bin values model.fit()
 
-    
     def fit(self, x, y, plot=False):
         '''
         Given input arrays x and y. Fits the model.
@@ -103,30 +102,43 @@ class isotonic_regression():
         if len(x) != len(y):
             raise ValueError('x and y must be of the same length')
 
-        ysum = y.min()
-        last_binval = y.min()
-        self.last_binvals[0] = y[:10].min()
+        ysum = 0
+        last_binval = 0
+        # self.last_binvals[0] = y[:10].min() # CHANGE THIS TO ACTUAL INTERCEPT
         self.bins = np.linspace(x.min(), x.max(), num=self.knots+1)
 
         for i in range(self.knots):
             # Select points in the current bin
-            bin_x = x[np.logical_and(x>self.bins[i], x<=self.bins[i+1])]
-            if len(bin_x) < 1: # >= 1 data point in each bin.
-                raise ValueError('Need at least 1 data point in each segment')
+            bin_x = x[np.logical_and(x>=self.bins[i], x<=self.bins[i+1])]
+            self.check_bin_x(i, bin_x)
 
             # Select bin ys and shift bin starting x and starting y to 0,0
-            bin_y = y[np.logical_and(x>self.bins[i], x<=self.bins[i+1]).flatten()]
+            bin_y = y[np.logical_and(x>=self.bins[i], x<=self.bins[i+1]).flatten()]
             bin_y = bin_y - last_binval
             bin_x = bin_x - self.bins[i]
+            
+            if i == 0:
+                # Find best fit line for the bin
+                ws = self.OLS_linear_interpolation(bin_x, bin_y, first=True)
 
-            # Find best fit line for the bin
-            slope = self.ISO_OLS(bin_x, bin_y)
-            self.slopes[i] = slope
+                # First value has no constraint on intercept
+                self.last_binvals[i] = ws[0]
+                self.slopes[i] = ws[1]
 
-            # Store the last value in the bin (to add onto next bin)
-            last_binval = self.line(self.bins[1] - self.bins[0], slope, last_binval)
-            self.last_binvals[i+1] = last_binval
-            ysum += last_binval
+                # Calculating last value in bin
+                last_binval = self.line(self.bins[1] - self.bins[0], ws[1], ws[0])
+                self.last_binvals[i+1] = last_binval
+                
+            else:  
+                # Find best fit line for the bin
+                slope = self.OLS_linear_interpolation(bin_x, bin_y)
+
+                # Store the last value in the bin (to add as intercept onto next bin)
+                last_binval = self.line(self.bins[1] - self.bins[0], slope, last_binval)
+                self.last_binvals[i+1] = last_binval
+                self.slopes[i] = slope
+
+            ysum = self.last_binvals[i+1]
     
         if plot:
             # plot fit model
@@ -152,33 +164,23 @@ class isotonic_regression():
                         preds[i] = self.line(x_raw, self.slopes[j], self.last_binvals[j])
                         broke = True
                         break
-                    # shift x until its bin starts at origin
+                    # shift x until the left of bin at origin
                     else:
                         x_raw -= self.bins[1] - self.bins[0]
                 # if x > last_bin set to last_binval
                 if broke == False:
                     preds[i] = self.last_binvals[j+1]
         return preds
-    
-    @staticmethod
-    def line(x, slope, intercept):
-        '''
-        Simple line function.
-        '''
-        return slope*x + intercept
 
-    @staticmethod
-    def ISO_OLS(x, y):
-        '''
-        Isotonic OLS. 
-        Returns slope if positive or 0 if not. 
-        '''
+    def OLS_linear_interpolation(self, x, y, first=False):
         x = x.reshape(-1,1)
+        if first:
+            x = np.hstack([(x**i) for i in range(2)])
         xTx = x.T.dot(x)
         xTx_inv = np.linalg.inv(xTx)
-        slope = xTx_inv.dot(x.T.dot(y))
-        return max(np.asarray([0]), slope)
-    
+        ws = xTx_inv.dot(x.T.dot(y))
+        return ws
+        
     def plot_model(self, x, y):
         '''
         Plots the models hypothetical predictions, MSE, and true data points.
@@ -189,11 +191,86 @@ class isotonic_regression():
         preds = self.predict(x)
         MSE = np.mean((y - preds) ** 2)
         
-        plt.title("Isotonic Regression, Knots: {}, MSE: {:.8f}".format(self.knots, MSE))
+        plt.title("{}, Knots: {}, MSE: {:.8f}".format(type(self).__name__, self.knots, MSE))
 
         for i in range(len(self.bins)):
             plt.axvline(x = self.bins[i], alpha=0.2)
         plt.show()
+
+    @staticmethod
+    def check_bin_x(i, bin_x):
+        '''
+        Checks each bin to validate before OLS calculation.
+        '''
+        # Calculating slope + intercept in 1st segment so need >2 xs
+        if i == 0 and len(bin_x) < 2:
+            raise ValueError('Need at least 2 data points in the 1st segment.')
+        # Need >1 x in all other bins
+        if len(bin_x) < 1:
+            raise ValueError('Need at least 1 data point in every segment but the 1st.')
+        # Need >0 non-zero values in matrix
+        if np.sum(bin_x) == 0:
+            raise ValueError('Need at least 1 non 0 value in bin xs')
+
+    @staticmethod
+    def line(x, slope, intercept):
+        '''
+        Simple line function.
+        '''
+        return slope*x + intercept
+
+class isotonic_regression(linear_interpolation):
+    '''
+    Isotonic regression model. 
+    '''
+    def fit(self, x, y, plot=False):
+        '''
+        Given input arrays x and y. Fits the model.
+        '''
+        # check inputs are the same length
+        if len(x) != len(y):
+            raise ValueError('x and y must be of the same length')
+
+        ysum = y.min()
+        last_binval = y.min()
+        self.last_binvals[0] = y.min()
+        self.bins = np.linspace(x.min(), x.max(), num=self.knots+1)
+
+        for i in range(self.knots):
+            # Select points in the current bin
+            bin_x = x[np.logical_and(x>=self.bins[i], x<=self.bins[i+1])]
+            self.check_bin_x(i, bin_x)
+
+            # Select bin ys and shift bin starting x and starting y to 0,0
+            bin_y = y[np.logical_and(x>=self.bins[i], x<=self.bins[i+1]).flatten()]
+            bin_y = bin_y - last_binval
+            bin_x = bin_x - self.bins[i]
+
+            # Find best fit line for the bin
+            slope = self.ISO_OLS(bin_x, bin_y)
+            self.slopes[i] = slope
+
+            # Store the last value in the bin (to add onto next bin)
+            last_binval = self.line(self.bins[1] - self.bins[0], slope, last_binval)
+            self.last_binvals[i+1] = last_binval
+            ysum += last_binval
+    
+        if plot:
+            # plot fit model
+            self.plot_model(x, y)
+
+    @staticmethod
+    def ISO_OLS(x, y):
+        '''
+        Isotonic OLS. 
+        Returns slope if positive or 0 if not. 
+        '''
+        x = x.reshape(-1,1)
+        xTx = x.T.dot(x)
+        print(xTx)
+        xTx_inv = np.linalg.inv(xTx)
+        slope = xTx_inv.dot(x.T.dot(y))
+        return max(np.asarray([0]), slope)
 
 if __name__ == '__main__':
     main()

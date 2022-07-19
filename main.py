@@ -1,19 +1,16 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from regressio.models import isotonic_regression
-from regressio.datagen import generate_isotonic_sample
-
-from regressio.models import linear_regression
-from regressio.datagen import generate_random_walk
-
-np.random.seed(1)
-plt.rcParams['figure.figsize'] = (10, 5)
+from regressio.models import linear_regression, linear_interpolation, isotonic_regression
+from regressio.datagen import generate_isotonic_sample, generate_random_walk
 
 def main():
-    x, y = generate_random_walk(100)
+    np.random.seed(1)
+    plt.rcParams['figure.figsize'] = (10, 5)
 
-    model = linear_regression(degree=10)
+    x, y = generate_random_walk(n=100)
+
+    model = linear_interpolation(knots=10)
     model.fit(x, y, plot=True)
     return
     

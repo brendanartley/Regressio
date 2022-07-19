@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 from regressio.datagen import generate_random_walk
-from regressio.models import linear_regression, isotonic_regression
+from regressio.models import linear_regression, linear_interpolation, isotonic_regression
 
 '''
 Pytest:
@@ -29,6 +29,13 @@ class Test_linear_regression:
     def test_degree_less_than_10(self):
         with pytest.raises(ValueError):
             model = linear_regression(-1)
+
+class Test_linear_interpolation: 
+    def test_no_data_in_knot(self):
+        with pytest.raises(ValueError):
+            x, y = np.arange(20), np.cumsum(np.ones(20))
+            model = linear_interpolation(21)
+            model.fit(x, y)
 
 class Test_isotonic_regression: 
     def test_no_data_in_knot(self):
