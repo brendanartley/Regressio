@@ -27,7 +27,7 @@ class linear_regression():
         '''
         Given input arrays x and y. Fits the model.
         '''
-        # -- Validate input data -- 
+        # Validate input data
         if len(rawx) != len(y):
             raise ValueError('x and y must be of the same length')
         elif len(rawx) <= 1:
@@ -36,17 +36,17 @@ class linear_regression():
         # Stores min, max of x for plot_polynomial function
         self.range = [rawx.min(), rawx.max()]
 
-        # -- Calculate ordinary least squares --
+        # Calculate ordinary least squares
         x = np.hstack([(rawx**i) for i in range(self.degree+1)])
         xTx = x.T.dot(x)
         xTx_inv = np.linalg.inv(xTx)
         ws = xTx_inv.dot(x.T.dot(y))
         self.ws = ws # storing model weights
         
-        # -- Calculating MSE --
+        # Calculating MSE
         training_mse = self.MSE(x, y)
 
-        # -- Store model weights and plot results -- 
+        # Store model weights and plot results
         self.ws = ws
         if plot:
             self.plot_model(rawx, y, training_mse)
@@ -71,25 +71,25 @@ class linear_regression():
         '''
         Plots the models hypothetical predictions, MSE, and true data points.
         '''
-        # -- Creates model prediction line -- 
+        # Creates model prediction line
         modelx = np.linspace(self.range[0], self.range[1], 1000).reshape([-1, 1])
         expanded = np.hstack([self.ws[i] * (modelx ** i) for i in range(0, len(self.ws))])
         modely = np.sum(expanded, axis=-1)
 
-        # -- Plot training data
+        # Plot training data
         plt.scatter(x, y)
         
-        # -- Plots model prediction line --
+        # Plots model prediction line
         plt.scatter(modelx, modely, s=5, color='tab:orange')
         plt.title("{}, Degree: {}, MSE: {:.8f}".format(type(self).__name__, self.degree, training_mse))
         plt.show()
 
 class linear_interpolation():
     '''
-    Linear interpolation model. 
+    Linear interpolation model (aka. piecewise linear regression).
     '''
     def __init__(self, knots):
-        self.knots = knots # number of kknots
+        self.knots = knots # number of knots
         self.slopes = np.zeros(knots) # stores piecewise linear model slopes
         self.last_binvals = np.zeros(knots+1) # stores last y-value in each bin
         self.bins = None #set bin values model.fit()
@@ -104,13 +104,12 @@ class linear_interpolation():
 
         ysum = 0
         last_binval = 0
-        # self.last_binvals[0] = y[:10].min() # CHANGE THIS TO ACTUAL INTERCEPT
         self.bins = np.linspace(x.min(), x.max(), num=self.knots+1)
 
         for i in range(self.knots):
             # Select points in the current bin
             bin_x = x[np.logical_and(x>=self.bins[i], x<=self.bins[i+1])]
-            self.check_bin_x(i, bin_x)
+            self.check_bin(i, bin_x)
 
             # Select bin ys and shift bin starting x and starting y to 0,0
             bin_y = y[np.logical_and(x>=self.bins[i], x<=self.bins[i+1]).flatten()]
@@ -146,7 +145,7 @@ class linear_interpolation():
 
     def predict(self, x):
         '''
-        Given a 1-dimenional numpy array, makes predictions.
+        Given a 1-dimenional numpy array, make predictions.
         '''
         preds = np.zeros(len(x))
         # iterating every x in input array
@@ -156,7 +155,6 @@ class linear_interpolation():
             # if less than starting bin set to starting value
             if x[i] <= self.bins[0]:
                 preds[i] = self.last_binvals[0]
-                continue
             else:
                 # iterating over every bin
                 for j in range(len(self.bins)-1):
@@ -198,7 +196,7 @@ class linear_interpolation():
         plt.show()
 
     @staticmethod
-    def check_bin_x(i, bin_x):
+    def check_bin(i, bin_x):
         '''
         Checks each bin to validate before OLS calculation.
         '''
@@ -221,7 +219,9 @@ class linear_interpolation():
 
 class isotonic_regression(linear_interpolation):
     '''
-    Isotonic regression model. 
+    Isotonic regression model. Essentially a strictly increasing linear interpolation model.
+    
+    Child of linear_interpolation class. 
     '''
     def fit(self, x, y, plot=False):
         '''
@@ -239,7 +239,7 @@ class isotonic_regression(linear_interpolation):
         for i in range(self.knots):
             # Select points in the current bin
             bin_x = x[np.logical_and(x>=self.bins[i], x<=self.bins[i+1])]
-            self.check_bin_x(i, bin_x)
+            self.check_bin(i, bin_x)
 
             # Select bin ys and shift bin starting x and starting y to 0,0
             bin_y = y[np.logical_and(x>=self.bins[i], x<=self.bins[i+1]).flatten()]
@@ -267,10 +267,85 @@ class isotonic_regression(linear_interpolation):
         '''
         x = x.reshape(-1,1)
         xTx = x.T.dot(x)
-        print(xTx)
         xTx_inv = np.linalg.inv(xTx)
         slope = xTx_inv.dot(x.T.dot(y))
         return max(np.asarray([0]), slope)
+
+class bin_regression():
+    '''
+    Bin regression.
+    '''
+    def __init__(self, knots):
+        self.knots = knots # number of knots
+        self.bin_vals = np.zeros(knots) # stores each bin y value
+        self.bins = None #set bin values model.fit()
+
+    def fit(self, x, y, plot=False):
+        '''
+        Given input arrays x and y. Fits the model.
+        '''
+        # check inputs are the same length
+        if len(x) != len(y):
+            raise ValueError('x and y must be of the same length')
+
+        self.bins = np.linspace(x.min(), x.max(), num=self.knots+1)
+
+        for i in range(self.knots):
+            # Select bin ys and shift bin starting x and starting y to 0,0
+            bin_y = y[np.logical_and(x>=self.bins[i], x<=self.bins[i+1]).flatten()]
+            self.check_bin(i, bin_y)
+            self.bin_vals[i] = np.mean(bin_y)
+    
+        if plot:
+            # plot fit model
+            self.plot_model(x, y)
+
+    def predict(self, x):
+        '''
+        Given a 1-dimenional numpy array, make predictions.
+        '''
+        preds = np.zeros(len(x))
+        # iterating every x in input array
+        for i in range(len(x)):
+            broke = False
+            if x[i] <= self.bins[0]:
+                preds[i] = self.bin_vals[0]
+            else:
+                # iterating until in correct bin
+                for j in range(len(self.bins)-1):
+                    if x[i] > self.bins[j] and x[i] < self.bins[j+1]:
+                        preds[i] = self.bin_vals[j]
+                        broke = True
+                        break
+                if broke == False:
+                    preds[i] = self.bin_vals[-1]
+        return preds
+
+    def plot_model(self, x, y):
+        '''
+        Plots the models hypothetical predictions, MSE, and true data points.
+        '''
+        # Plot each knot value twice (in left and right bin).
+        plt.plot(np.repeat(self.bins, 2)[1:-1], np.repeat(self.bin_vals, 2), color='tab:orange')
+        plt.scatter(x, y)
+
+        preds = self.predict(x)
+        MSE = np.mean((y - preds) ** 2)
+        
+        plt.title("{}, Knots: {}, MSE: {:.8f}".format(type(self).__name__, self.knots, MSE))
+
+        for i in range(len(self.bins)):
+            plt.axvline(x = self.bins[i], alpha=0.2)
+        plt.show()
+
+    @staticmethod
+    def check_bin(i, bin_x):
+        '''
+        Checks each bin to validate before bin y calculation.
+        '''
+        # Need len(bin_x)>1 for all bins
+        if len(bin_x) < 1:
+            raise ValueError('Need at least 1 data point in every segment but the 1st.')
 
 if __name__ == '__main__':
     main()
