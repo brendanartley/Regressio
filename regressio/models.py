@@ -37,6 +37,7 @@ class linear_regression():
         self.range = [rawx.min(), rawx.max()]
 
         # Calculate ordinary least squares
+        rawx = rawx.reshape(-1,1)
         x = np.hstack([(rawx**i) for i in range(self.degree+1)])
         xTx = x.T.dot(x)
         xTx_inv = np.linalg.inv(xTx)
