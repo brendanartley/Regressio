@@ -29,7 +29,7 @@ Regressio is supported in Python 3.6+ or above and requires only NumPy and Matpl
 
 Cubic spline. 
 
-```
+```python
 # Importing required modules + classes
 from regressio.models import cubic_spline
 from regressio.datagen import generate_random_walk
@@ -51,7 +51,7 @@ model.fit(x, y, plot=True)
 
 Linear regression.
 
-```
+```python
 # Importing required modules + classes
 from regressio.models import linear_regression
 from regressio.datagen import generate_random_walk
@@ -73,7 +73,7 @@ model.fit(x, y, plot=True)
 
 Isotonic regression.
 
-```
+```python
 # Importing required modules + classes
 from regressio.models import isotonic_regression
 from regressio.datagen import generate_isotonic_sample
@@ -91,6 +91,6 @@ x, y = generate_isotonic_sample(100)
 model = isotonic_regression(knots=12)
 model.fit(x, y, plot=True)
 ```
-<img alt="Isotonic Regression" src="imgs/Isotonic_regression.png" width="550">
+<img alt="Isotonic Regression" src="imgs/isotonic_regression.png" width="550">
 
 For more examples, navigate to the examples.ipynb file in this repository.
