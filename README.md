@@ -2,8 +2,6 @@
 <img src="./imgs/logo.svg" width="300">
 </h1><br>
 
-## Overview
-
 Regressio is a python module for univariate regression and interpolation models.
 
 The available models are:
