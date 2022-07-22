@@ -2,81 +2,93 @@
 <img src="./imgs/logo.svg" width="300">
 </h1><br>
 
-A simple python library of regression models.
+Regressio is a python module for univariate regression and interpolation models.
+
+The available models are:
+- Linear Regression
+- Linear Spline
+- Isotonic Regression
+- Bin Regression
+- Cubic Spline
+
+There are also functions implemented to generate data samples.
+
+The available data generators are:
+- Random Walk
+- Isotonic Sample
+
+## Installation
+
+Regressio is supported in Python 3.6+ or above and requires only NumPy and Matplotlib.
+
+`pip install coming soon..`
 
 ## Example Usage
 
-Linear regression.
+Cubic spline. 
 
-```
+```python
+# Import modules + classes
+from regressio.models import cubic_spline
+from regressio.datagen import generate_random_walk
 import numpy as np
 import matplotlib.pyplot as plt
+
+# Set figsize and seed
+plt.rcParams['figure.figsize'] = (10, 5)
+np.random.seed(0)
+
+# Generate data sample
+x, y = generate_random_walk(150)
+
+# Fit model and plot result
+model = cubic_spline(pieces=15)
+model.fit(x, y, plot=True)
+```
+<img alt="Cubic Spline" src="imgs/cubic_spline.png" width="550">
+
+Linear regression.
+
+```python
+# Import modules + classes
 from regressio.models import linear_regression
 from regressio.datagen import generate_random_walk
+import numpy as np
+import matplotlib.pyplot as plt
 
-np.random.seed(1)
+# Set figsize and seed
 plt.rcParams['figure.figsize'] = (10, 5)
+np.random.seed(1)
 
-x, y = generate_random_walk(n=100)
+# Generate data sample
+x, y = generate_random_walk(100)
 
+# Fit model and plot result
 model = linear_regression(degree=5)
 model.fit(x, y, plot=True)
 ```
 <img alt="Linear Regression" src="imgs/linear_regression.png" width="550">
 
-Linear Interpolation (aka. Piecewise Linear Regression).
+Isotonic regression.
 
-```
-import numpy as np
-import matplotlib.pyplot as plt
-from regressio.models import linear_interpolation
-from regressio.datagen import generate_random_walk
-
-np.random.seed(2)
-plt.rcParams['figure.figsize'] = (10, 5)
-
-x, y = generate_random_walk(n=100)
-
-model = linear_interpolation(knots=10)
-model.fit(x, y, plot=True)
-```
-<img alt="Linear Interpolation" src="imgs/linear_interpolation.png" width="550">
-
-Isotonic regression. Strictly increasing linear interpolation.
-
-```
-import numpy as np
-import matplotlib.pyplot as plt
+```python
+# Import modules + classes
 from regressio.models import isotonic_regression
 from regressio.datagen import generate_isotonic_sample
+import numpy as np
+import matplotlib.pyplot as plt
 
-
-np.random.seed(4)
+# Set figsize and seed
 plt.rcParams['figure.figsize'] = (10, 5)
+np.random.seed(4)
 
-x, y = generate_isotonic_sample(n=100)
+# Generate data sample
+x, y = generate_isotonic_sample(100)
 
+# Fit model and plot result
 model = isotonic_regression(knots=12)
 model.fit(x, y, plot=True)
 ```
 <img alt="Isotonic Regression" src="imgs/isotonic_regression.png" width="550">
 
-Bin regression.
-
-```
-import numpy as np
-import matplotlib.pyplot as plt
-from regressio.models import bin_regression
-from regressio.datagen import generate_random_walk
-
-np.random.seed(5)
-plt.rcParams['figure.figsize'] = (10, 5)
-
-x, y = generate_random_walk(n=100)
-
-model = isotonic_regression(knots=8)
-model.fit(x, y, plot=True)
-```
-<img alt="Bin Regression" src="imgs/bin_regression.png" width="550">
-
-More examples to come in the [notebooks folder](notebooks/).
+For more examples, navigate to the [examples.ipynb](examples.ipynb) file in this repository.
