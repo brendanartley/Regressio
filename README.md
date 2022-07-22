@@ -93,4 +93,4 @@ model.fit(x, y, plot=True)
 ```
 <img alt="Isotonic Regression" src="imgs/isotonic_regression.png" width="550">
 
-For more examples, navigate to the examples.ipynb file in this repository.
+For more examples, navigate to the [examples.ipynb](examples.ipynb) file in this repository.
