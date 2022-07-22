@@ -379,7 +379,6 @@ class bin_regression():
 class cubic_spline():
     '''
     Cubic spline. A spline constructed of multiple cubic piecewise polynomials.
-
     Where two polynomials meets, the 1st and 2nd derivatives are equal. This makes for a
     smooth fitting line. 
     
@@ -547,6 +546,62 @@ class cubic_spline():
         if type(pieces) != int or pieces < 2:
             raise ValueError('pieces must be an integer >= 2')
         return pieces
+
+class natural_cubic_spline(cubic_spline):
+    '''
+    Natural Cubic spline. A cubic spline that extrapolates linearly beyond the its knot boundary.
+    '''
+    def __init__(self, pieces):
+        self.pieces = self.check_input_pieces(pieces)
+        self.knot_xvals = None
+        self.knot_yvals = None
+        self.ws = None # stores weights for each piecewise polynomial
+
+    def predict(self, xs):
+        '''
+        Given a set of x values, makes predictions.
+        '''
+        # Array for predictions (assigning is faster than append)
+        ys = np.zeros(len(xs), dtype=np.float64) # use float for precision
+
+        ws_pos = 0
+        insert_pos = 0
+        for i in range(self.pieces+1):
+            # Add points before startpoint
+            if i == 0:
+                # Naive calculation of slope at endpoint
+                p1 = self.polynomial(self.knot_xvals[i:i+1], self.ws[ws_pos:ws_pos+4][::-1])
+                p2 = self.polynomial(self.knot_xvals[i:i+1] + 0.01, self.ws[ws_pos:ws_pos+4][::-1])
+                slope = (p2 - p1) / 0.01
+                # Calculating values with a shift based on starting knot xvalue
+                ys_to_add = self.line(xs[xs<=self.knot_xvals[i]] - self.knot_xvals[0], slope, p2)
+                ys[:len(ys_to_add)] = ys_to_add
+
+            # all other pieces
+            else:
+                ys_to_add = self.polynomial(xs[np.logical_and(xs>self.knot_xvals[i-1], xs<=self.knot_xvals[i])], self.ws[ws_pos:ws_pos+4][::-1])
+                ws_pos+=4
+            
+            # inserting predictions to array, moving pointer
+            ys[insert_pos:insert_pos + len(ys_to_add)] = ys_to_add
+            insert_pos += len(ys_to_add)
+
+        # Add points after endpoint
+        ws_pos-=4
+        
+        # Naive calculation of slope
+        p1 = self.polynomial(self.knot_xvals[-1:], self.ws[ws_pos:ws_pos+4][::-1])
+        p2 = self.polynomial(self.knot_xvals[-1:] + 0.01, self.ws[ws_pos:ws_pos+4][::-1])
+        slope = (p2 - p1) / 0.01
+        ys_to_add = self.line(xs[xs>self.knot_xvals[i]] - self.knot_xvals[-1], slope, p2)
+        
+        # inserting points past the endpoint to predictions array
+        ys[insert_pos:insert_pos + len(ys_to_add)] = ys_to_add
+        return ys
+    
+    @staticmethod
+    def line(x, slope, intercept):
+        return (slope*x) + intercept
 
 if __name__ == '__main__':
     main()

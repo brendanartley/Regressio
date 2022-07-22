@@ -10,6 +10,7 @@ The available models are:
 - Isotonic Regression
 - Bin Regression
 - Cubic Spline
+- Natural Cubic Spline
 
 There are also functions implemented to generate data samples.
 

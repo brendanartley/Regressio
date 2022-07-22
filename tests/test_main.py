@@ -115,3 +115,9 @@ class Test_cubic_spline:
         x, y = generate_random_walk(100)
         model = cubic_spline(pieces=50)
         model.fit(x, y)
+
+class Test_natural_cubic_spline: 
+    def test_fit_model(self):
+        x, y = generate_random_walk(100)
+        model = natural_cubic_spline(pieces=50)
+        model.fit(x, y)
