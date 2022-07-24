@@ -19,7 +19,7 @@ The available data generators are:
 - Random Walk
 - Isotonic Sample
 
-## Installation (I think a setup.py file is needed)
+## Installation
 
 Regressio is supported in Python 3.6+ or above and requires only NumPy and Matplotlib.
 
@@ -95,6 +95,6 @@ model.fit(x, y, plot=True)
 
 For more examples, navigate to the [examples.ipynb](examples.ipynb) file in this repository.
 
-## References (Need to Format This)
+## References
 
 - Hyndman, R.J., & Athanasopoulos, G. (2021) Forecasting: principles and practice, 3rd edition, OTexts: Melbourne, Australia. OTexts.com/fpp3. Accessed July 2022.
