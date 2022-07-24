@@ -649,6 +649,7 @@ class exponential_smoothing():
         # MSE and Title
         MSE = np.mean((y - smoothed_ys) ** 2)
         plt.title("{}, MSE: {:.8f}".format(type(self).__name__, MSE))
+        plt.show()
 
     @staticmethod
     def check_alpha(alpha):
