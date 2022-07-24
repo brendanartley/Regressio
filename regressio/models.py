@@ -415,7 +415,6 @@ class cubic_spline():
         if plot:
             self.plot_model(x, y)
 
-
     def calc_piecewise_weights(self, x, y):
         '''
         Given x, y, returns the weights for the piecewise polynomials. Constructs 
@@ -494,7 +493,7 @@ class cubic_spline():
         Plots the models hypothetical predictions, MSE, and true data points.
         '''
         # Plot hypothetical model values
-        modelx = np.linspace(self.knot_xvals[0], self.knot_xvals[-1], 100)
+        modelx = np.linspace(self.knot_xvals[0], self.knot_xvals[-1], self.pieces*10)
         modely = self.predict(modelx)
         plt.plot(modelx, modely, color='tab:orange')
 
@@ -602,6 +601,63 @@ class natural_cubic_spline(cubic_spline):
     @staticmethod
     def line(x, slope, intercept):
         return (slope*x) + intercept
+
+class exponential_smoothing():
+    '''
+    Exponential smoothing model. An iterative model that assigns exponentially decreasing
+    weights to past observations. (ie. Weighted moving average with exponentially decreasing weights)
+
+    Using mean initialization for the first forecast value. This has no significant effect
+    compared to MSE optimization when len(y) >= 10. See more on initial forecast value
+    optimization below.
+
+    Reference:
+    Hyndman, R.J., & Athanasopoulos, G. (2021) Forecasting: principles and practice, 3rd edition, 
+    OTexts: Melbourne, Australia. OTexts.com/fpp3. Accessed July 2022.
+    '''
+    def __init__(self, alpha=0.2):
+        self.alpha = self.check_alpha(alpha)
+
+    def fit(self, x, y, plot=False):
+        '''
+        Given arrays x and y, returns exponentially smoothed y values.
+        '''
+        if len(y) <= 2:
+            raise ValueError('len(y) must be greater than 2')
+        
+        # Array for storing smoothed values
+        smoothed_ys = np.zeros_like(y)
+        smoothed_ys[0] = np.mean(y[:10]) # Initializing initial value using Mean
+
+        # Iterating y values
+        for i in range(1, len(y)):
+            smoothed_ys[i] = self.alpha*y[i-1] + (1-self.alpha)*smoothed_ys[i-1]
+
+        if plot:
+            self.plot_model(x, y, smoothed_ys)
+
+    def plot_model(self, x, y, smoothed_ys):
+        '''
+        Plots the smoothed model, MSE, and true data points.
+        '''
+        # Plot smoothed model values
+        plt.plot(x, smoothed_ys, color='tab:orange')
+        
+        # Plot actual data values
+        plt.scatter(x, y)
+        
+        # MSE and Title
+        MSE = np.mean((y - smoothed_ys) ** 2)
+        plt.title("{}, MSE: {:.8f}".format(type(self).__name__, MSE))
+
+    @staticmethod
+    def check_alpha(alpha):
+        '''
+        Validates alpha input.
+        '''
+        if (type(alpha) == float or type(alpha) == int) and 0 < alpha < 1:
+            return alpha
+        raise ValueError('Alpha must be between 0 and 1')
 
 if __name__ == '__main__':
     main()

@@ -2,7 +2,7 @@
 <img src="./imgs/logo.svg" width="300">
 </h1><br>
 
-Regressio is a python module for univariate regression and interpolation models.
+Regressio is a python module for univariate regression, interpolation, and smoothing.
 
 The available models are:
 - Linear Regression
@@ -11,6 +11,7 @@ The available models are:
 - Bin Regression
 - Cubic Spline
 - Natural Cubic Spline
+- Exponential Smoothing
 
 There are also functions implemented to generate data samples.
 
@@ -18,7 +19,7 @@ The available data generators are:
 - Random Walk
 - Isotonic Sample
 
-## Installation
+## Installation (I think a setup.py file is needed)
 
 Regressio is supported in Python 3.6+ or above and requires only NumPy and Matplotlib.
 
@@ -93,3 +94,7 @@ model.fit(x, y, plot=True)
 <img alt="Isotonic Regression" src="imgs/isotonic_regression.png" width="550">
 
 For more examples, navigate to the [examples.ipynb](examples.ipynb) file in this repository.
+
+## References (Need to Format This)
+
+- Hyndman, R.J., & Athanasopoulos, G. (2021) Forecasting: principles and practice, 3rd edition, OTexts: Melbourne, Australia. OTexts.com/fpp3. Accessed July 2022.
