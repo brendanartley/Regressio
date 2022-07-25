@@ -384,6 +384,11 @@ class cubic_spline():
     
     Cubic spline is better than high degree polynomials as it oscillates less at
     its endpoints and between values (ie. mitigates Runge's phenomenon).
+
+    Reference:
+    Kong, Qingkai, et al. Python Programming and Numerical Methods: A Guide for 
+    Engineers and Scientists. Academic Press, an Imprint of Elsevier, 
+    pythonnumericalmethods.berkeley.edu, Accessed 2022. 
     '''
     def __init__(self, pieces):
         self.pieces = self.check_input_pieces(pieces)
@@ -602,7 +607,7 @@ class natural_cubic_spline(cubic_spline):
     def line(x, slope, intercept):
         return (slope*x) + intercept
 
-class exponential_smoothing():
+class exponential_smoother():
     '''
     Exponential smoothing model. An iterative model that assigns exponentially decreasing
     weights to past observations. (ie. Weighted moving average with exponentially decreasing weights)
