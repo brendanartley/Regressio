@@ -2,12 +2,38 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class linear_regression():
-    '''
-    Linear regression model that fits a polynomial up to the 10th degree. 
-    
-    - Degree > 10 is numerically unstable in the OLS calculation. Consider
-    using natural cubic spline if a degree 10 polynomial is underfitting.
-    '''
+    """Linear regression model. 
+
+    A regression model that models the relationship between a variable x 
+    and a variable y using an nth degree polynomial. Degree > 10 is 
+    numerically unstable in the OLS calculation. Consider using a natural 
+    cubic spline if a degree 10 polynomial underfits.
+
+    Args
+    ---------
+        degree: the degree of the polynomial
+
+    Attributes
+    ---------
+        degree (int): the degree of the polynomial
+        ws (arr[int]): stored model weights
+        range (arr[float]): stored range of the x-values
+        rmse (float): stored RMSE from model training
+
+    Raises
+    ---------
+        TypeError: if degree is not a number
+        ValueError: if degree is < 0 or > 10
+
+    Example
+    ---------
+    >>> from regressio.models import linear_regression
+    >>> from regressio.datagen import generate_random_walk
+    >>> x, y = generate_random_walk(100)
+    >>> model = linear_regression(degree=5)
+    >>> model.fit(x, y, plot=True)
+    """
+
     def __init__(self, degree):
         self.degree = self.check_degree_input(degree)
         self.ws = np.random.random(size=degree).astype(np.float128)
@@ -82,24 +108,50 @@ class linear_regression():
         Validates degree input.
         '''
         if type(degree) != int:
-            raise ValueError('Degree must be an integ')
+            raise TypeError('Degree must be an integer')
         elif degree < 0 or degree > 10:
             raise ValueError('0 <= degree <= 10. Model is unstable for degree > 10.')
         return degree
 
 class linear_spline():
-    '''
-    Linear spline model (aka. piecewise simple linear regression). Fits a linear
-    model between each neighbouring knots.
+    """Linear spline model (aka. piecewise simple linear regression).
 
-    Values outside the range of the training data are predicted as an endpoint
-    value.
-    '''
+    A linear interpolation model that fits a simple linear regression model 
+    to a variable x and a variable y, in 2 or more segments. The function in 
+    each segment is estimated using ordinary least squares. Values that fall 
+    outside the range of the training data are predicted as endpoint 
+    values.
+
+    Args
+    ---------
+        knots: number of linear segments + 1
+
+    Attributes
+    ---------
+        knots (int): the degree of the polynomial
+        slopes (arr[float]): stores piecewise linear model slopes
+        last_binvals (arr[float]): stores last y-value of each bin
+        knot_vals (arr[float]): stores each knot value
+
+    Raises
+    ---------
+        TypeError: if knots is not a number
+        ValueError: if knots < 2
+
+    Example
+    ---------
+    >>> from regressio.models import linear_spline
+    >>> from regressio.datagen import generate_random_walk
+    >>> x, y = generate_random_walk(100)
+    >>> model = linear_spline(knots=10)
+    >>> model.fit(x, y, plot=True)
+    """
+
     def __init__(self, knots):
-        self.knots = self.check_knots_input(knots) # number of knots
-        self.slopes = np.zeros(knots) # stores piecewise linear model slopes
-        self.last_binvals = np.zeros(knots) # stores last y-value in each bin
-        self.knot_vals = None #set bin values model.fit()
+        self.knots = self.check_knots_input(knots)
+        self.slopes = np.zeros(knots)
+        self.last_binvals = np.zeros(knots)
+        self.knot_vals = None #set knot values model.fit()
         
     def fit(self, x, y, plot=False):
         '''
@@ -232,17 +284,43 @@ class linear_spline():
         '''
         Validates input knot parameter.
         '''
-        if type(knots) != int or knots < 2:
-            raise ValueError('knots must be an integer >= 1')
+        if type(knots) != int:
+            raise TypeError('knots must be an integer')
+        if knots < 2:
+            raise ValueError('knots must be >= 1')
         return knots
 
 class isotonic_regression(linear_spline):
-    '''
-    Isotonic regression model. This is the same as a strictly increasing 
-    linear spline model. 
-    
-    Child of the linear_spline class. 
-    '''
+    """Isotonic regression model (strictly increasing linear spline).
+
+    Child of the linear_spline class. Differs in that the slope
+    of each piecewise model must be greater than or equal to 0.
+
+    Args
+    ---------
+        knots: number of linear segments + 1
+
+    Attributes
+    ---------
+        knots (int): the degree of the polynomial
+        slopes (arr[float]): stores piecewise linear model slopes
+        last_binvals (arr[float]): stores last y-value of each bin
+        knot_vals (arr[float]): stores each knot value
+
+    Raises
+    ---------
+        TypeError: if knots is not a number
+        ValueError: if knots < 2
+
+    Example
+    ---------
+    >>> from regressio.models import isotonic_regression
+    >>> from regressio.datagen import generate_isotonic_sample
+    >>> x, y = generate_isotonic_sample(100)
+    >>> model = isotonic_regression(knots=12)
+    >>> model.fit(x, y, plot=True)
+    """
+
     def fit(self, x, y, plot=False):
         '''
         Given input arrays x and y. Fits the model.
@@ -292,10 +370,35 @@ class isotonic_regression(linear_spline):
         return max(np.asarray([0]), slope)
 
 class bin_regression():
-    '''
-    Bin regression. Splits the training data into bins and takes the mean
-    value as the prediction for each bin.
-    '''
+    """Bin regression model.
+
+    Bin regression is when a data sample is divided into intervals, and the prediction
+    for each interval is the mean value of data points in the bin.
+
+    Args
+    ---------
+        bins: the number of bins
+
+    Attributes
+    ---------
+        bins (int): the number of bins
+        bin_ys (arr[float]): the mean value of each bin
+        bin_vals (arr[float]): the endpoints of each bin
+
+    Raises
+    ---------
+        TypeError: if bins is not a number
+        ValueError: if bins < 2
+
+    Example
+    ---------
+    >>> from regressio.models import bin_regression
+    >>> from regressio.datagen import generate_random_walk
+    >>> x, y = generate_random_walk(150)
+    >>> model = bin_regression(bins=8)
+    >>> model.fit(x, y, plot=True)
+    """
+
     def __init__(self, bins):
         self.bins = self.check_bins_input(bins) # number of bins
         self.bin_ys = np.zeros(bins) # stores each bin y value
@@ -372,19 +475,52 @@ class bin_regression():
         '''
         Validates input bin parameter.
         '''
-        if type(bins) != int or bins < 2:
-            raise ValueError('bins must be an integer >= 1')
+        if type(bins) != int:
+            raise TypeError('bin must be an integer')
+        if bins < 2:
+            raise ValueError('bins must be >= 1')
         return bins
 
 class cubic_spline():
-    '''
-    Cubic spline. A spline constructed of multiple cubic piecewise polynomials.
-    Where two polynomials meets, the 1st and 2nd derivatives are equal. This makes for a
-    smooth fitting line. 
-    
-    Cubic spline is better than high degree polynomials as it oscillates less at
-    its endpoints and between values (ie. mitigates Runge's phenomenon).
-    '''
+    """Cubic spline model.
+
+    Cubic spline is a spline constructed of multiple cubic piecewise 
+    polynomials. Where two polynomials meet, the 1st and 2nd derivatives are equal. 
+    This makes for a smooth fitting line. Cubic spline is better than high degree 
+    polynomials as it oscillates less at its endpoints and between values 
+    (ie. mitigates Runge's phenomenon).
+
+    Args
+    ---------
+        pieces: the number of segments
+
+    Attributes
+    ---------
+        pieces (int): the degree of the polynomial
+        knot_xvals (arr[float]): knot x values
+        knot_yvals (arr[float]): knot y values
+        ws (arr[float]): piecewise model weights
+
+    Raises
+    ---------
+        TypeError: if pieces is not an integer
+        ValueError: if pieces < 2
+
+    Example
+    ---------
+    >>> from regressio.models import cubic_spline
+    >>> from regressio.datagen import generate_random_walk
+    >>> x, y = generate_random_walk(150)
+    >>> model = cubic_spline(pieces=15)
+    >>> model.fit(x, y, plot=True)
+
+    Reference
+    ----------
+    Kong, Qingkai, et al. Python Programming and Numerical Methods: A Guide for 
+    Engineers and Scientists. Academic Press, an Imprint of Elsevier, 
+    pythonnumericalmethods.berkeley.edu, Accessed 2022. 
+    """
+
     def __init__(self, pieces):
         self.pieces = self.check_input_pieces(pieces)
         self.knot_xvals = None
@@ -542,14 +678,48 @@ class cubic_spline():
         '''
         Validates input pieces.
         '''
-        if type(pieces) != int or pieces < 2:
-            raise ValueError('pieces must be an integer >= 2')
+        if type(pieces) != int:
+            raise TypeError('pieces must be an integer')
+        if pieces < 2:
+            raise ValueError('pieces must be >= 2')
         return pieces
 
 class natural_cubic_spline(cubic_spline):
-    '''
-    Natural Cubic spline. A cubic spline that extrapolates linearly beyond the its knot boundary.
-    '''
+    """Natural cubic spline model.
+
+    Child of the cubic_spline class. Differs in that the spline extrapolates 
+    linearly beyond its knot boundaries.
+
+    Args
+    ---------
+        pieces: the number of segments
+
+    Attributes
+    ---------
+        pieces (int): the degree of the polynomial
+        knot_xvals (arr[float]): knot x values
+        knot_yvals (arr[float]): knot y values
+        ws (arr[float]): piecewise model weights
+
+    Raises
+    ---------
+        TypeError: if pieces is not an integer
+        ValueError: if pieces < 2
+
+    Example
+    ---------
+    >>> from regressio.models import natural_cubic_spline
+    >>> from regressio.datagen import generate_random_walk
+    >>> x, y = generate_random_walk(200)
+    >>> model = natural_cubic_spline(pieces=10)
+    >>> model.fit(x, y, plot=True)
+
+    Reference
+    ----------
+    Kong, Qingkai, et al. Python Programming and Numerical Methods: A Guide for 
+    Engineers and Scientists. Academic Press, an Imprint of Elsevier, 
+    pythonnumericalmethods.berkeley.edu, Accessed 2022. 
+    """
     def __init__(self, pieces):
         self.pieces = self.check_input_pieces(pieces)
         self.knot_xvals = None
@@ -602,19 +772,43 @@ class natural_cubic_spline(cubic_spline):
     def line(x, slope, intercept):
         return (slope*x) + intercept
 
-class exponential_smoothing():
-    '''
-    Exponential smoothing model. An iterative model that assigns exponentially decreasing
-    weights to past observations. (ie. Weighted moving average with exponentially decreasing weights)
+class exponential_smoother():
+    """Exponential smoothing model.
 
-    Using mean initialization for the first forecast value. This has no significant effect
-    compared to MSE optimization when len(y) >= 10. See more on initial forecast value
-    optimization below.
+    An iterative model that make predictions based on the weighted moving average of past 
+    predictions with exponentially decreasing weight.
 
-    Reference:
-    Hyndman, R.J., & Athanasopoulos, G. (2021) Forecasting: principles and practice, 3rd edition, 
-    OTexts: Melbourne, Australia. OTexts.com/fpp3. Accessed July 2022.
-    '''
+    This model uses mean initialization for the first forecast value. This has no 
+    significant effect compared to MSE optimization when len(y) >= 10. See more on initial
+    forecasting values in the reference below.
+
+    Args
+    ---------
+        alpha: the starting weight of previous value
+
+    Attributes
+    ---------
+        alpha: the starting weight of previous value
+
+    Raises
+    ---------
+        TypeError: if alpha is not a floating point
+        ValueError: if alpha is not >0 and <1
+
+    Example
+    ---------
+    >>> from regressio.models import exponential_smoother
+    >>> from regressio.datagen import generate_random_walk
+    >>> x, y = generate_random_walk(200)
+    >>> model = exponential_smoother(alpha=0.1)
+    >>> model.fit(x, y, plot=True)
+
+    Reference
+    ----------
+    Hyndman, R.J., & Athanasopoulos, G. (2021) Forecasting: principles and practice, 
+    3rd edition, OTexts: Melbourne, Australia. OTexts.com/fpp3. Accessed July 2022.
+    """
+    
     def __init__(self, alpha=0.2):
         self.alpha = self.check_alpha(alpha)
 
@@ -656,9 +850,11 @@ class exponential_smoothing():
         '''
         Validates alpha input.
         '''
-        if (type(alpha) == float or type(alpha) == int) and 0 < alpha < 1:
-            return alpha
-        raise ValueError('Alpha must be between 0 and 1')
+        if type(alpha) != float:
+            raise TypeError('alpha must be a float')
+        if alpha < 0 or alpha > 1:
+            raise ValueError('alpha must be between 0 and 1')
+        return alpha
 
 if __name__ == '__main__':
     main()

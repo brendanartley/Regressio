@@ -31,7 +31,7 @@ class Test_linear_regression:
             model = linear_regression(degree=-1)
     
     def test_invalid_input(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             model = linear_regression(degree='0')
     
     def test_fit_model(self):
@@ -52,7 +52,7 @@ class Test_linear_spline:
             model = linear_spline(knots=1)
 
     def test_invalid_input(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             model = linear_spline(knots='0')
 
     def test_fit_model(self):
@@ -68,7 +68,7 @@ class Test_isotonic_regression:
             model.fit(x, y)
     
     def test_invalid_input(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             model = isotonic_regression(knots='0')
 
     def test_fit_model(self):
@@ -88,7 +88,7 @@ class Test_bin_regression:
             model = bin_regression(bins=0)
 
     def test_invalid_input(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             model = bin_regression(bins='0')
 
     def test_fit_model(self):
@@ -102,7 +102,7 @@ class Test_cubic_spline:
             model = cubic_spline(pieces=1)
     
     def test_invalid_input(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             model = cubic_spline(pieces='3')
 
     def test_data_too_small(self):
@@ -122,17 +122,17 @@ class Test_natural_cubic_spline:
         model = natural_cubic_spline(pieces=50)
         model.fit(x, y)
 
-class Test_exponential_smoothing: 
+class Test_exponential_smoother: 
     def test_zero_alpha(self):
-        with pytest.raises(ValueError):
-            model = exponential_smoothing(alpha=0)
+        with pytest.raises(TypeError):
+            model = exponential_smoother(alpha=0)
     
     def test_negative_alpha(self):
         with pytest.raises(ValueError):
-            model = exponential_smoothing(alpha=-2)
+            model = exponential_smoother(alpha=-1.2)
 
     def test_data_too_small(self):
         with pytest.raises(ValueError):
             x, y = generate_random_walk(2)
-            model = exponential_smoothing()
+            model = exponential_smoother()
             model.fit(x,y)
