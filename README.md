@@ -45,9 +45,9 @@ x, y = generate_random_walk(150)
 
 # Fit model and plot result
 model = cubic_spline(pieces=15)
-model.fit(x, y, plot=True)
+model.fit(x, y, plot=True, confidence_interval=0.99)
 ```
-<img alt="Cubic Spline" src="imgs/cubic_spline.png" width="550">
+<img alt="Cubic Spline" src="imgs/cubic_spline.png" width="650">
 
 Linear regression.
 
@@ -67,11 +67,11 @@ x, y = generate_random_walk(100)
 
 # Fit model and plot result
 model = linear_regression(degree=5)
-model.fit(x, y, plot=True)
+model.fit(x, y, plot=True, confidence_interval=0.95)
 ```
-<img alt="Linear Regression" src="imgs/linear_regression.png" width="550">
+<img alt="Linear Regression" src="imgs/linear_regression.png" width="650">
 
-Isotonic regression.
+Exponential Smoothing.
 
 ```python
 # Import modules + classes
@@ -82,16 +82,16 @@ import matplotlib.pyplot as plt
 
 # Set figsize and seed
 plt.rcParams['figure.figsize'] = (10, 5)
-np.random.seed(4)
+np.random.seed(6)
 
 # Generate data sample
 x, y = generate_isotonic_sample(100)
 
 # Fit model and plot result
-model = isotonic_regression(knots=12)
-model.fit(x, y, plot=True)
+model = exponential_smoother(alpha=0.2)
+model.fit(x, y, plot=True, confidence_interval=0.90)
 ```
-<img alt="Isotonic Regression" src="imgs/isotonic_regression.png" width="550">
+<img alt="Exponential Smoother" src="imgs/exponential_smoother.png" width="650">
 
 For more examples, navigate to the [examples.ipynb](examples.ipynb) file in this repository.
 
