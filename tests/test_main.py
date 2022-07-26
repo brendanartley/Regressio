@@ -8,6 +8,27 @@ Pytest:
 - prefix your class with 'Test', and functions with 'test' otherwise they will be skipped.
 '''
 
+class Test_smoother_class:
+    def test_invalid_ci(self):
+        # TODO: Need to implement z-score calc that any x in range 0 < x < 1.
+        with pytest.raises(ValueError):
+            x, y = generate_random_walk(100)
+            model = natural_cubic_spline(pieces=10)
+            model.fit(x, y, plot=True, confidence_interval=0.89)
+
+    def test_negative_ci(self):
+        with pytest.raises(ValueError):
+            x, y = generate_random_walk(100)
+            model = natural_cubic_spline(pieces=10)
+            model.fit(x, y, plot=True, confidence_interval=-0.5)
+    
+    def test_too_large_ci(self):
+        with pytest.raises(TypeError):
+            x, y = generate_random_walk(100)
+            model = natural_cubic_spline(pieces=10)
+            model.fit(x, y, plot=True, confidence_interval=2)
+
+
 class Test_generate_random_walk: 
     def test_positive(self):
         x, y = generate_random_walk(10, 1)
@@ -136,3 +157,8 @@ class Test_exponential_smoother:
             x, y = generate_random_walk(2)
             model = exponential_smoother()
             model.fit(x,y)
+
+    def test_fit_model(self):
+        x, y = generate_random_walk(100)
+        model = exponential_smoother()
+        model.fit(x, y)

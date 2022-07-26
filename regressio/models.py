@@ -1,7 +1,70 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-class linear_regression():
+class smoother(object):
+    """
+    Abstract class for all smoothing models. This class can not be instantiated 
+    directly and is strictly a parent class.  
+
+    Attributes
+    ---------
+        residuals (arr[int | float]): stored residuals
+        smoothed_ys (arr[int | float]): stored smoothed values
+        zscore (dict): dictionary of confidence z-scores
+        # TODO: Calculate z-score for any x. (0 < x < 1) 
+
+    Raises
+    ---------
+        Exception: if smoother is instantiated directly
+    """
+    
+    def __init__(self):
+        self.check_instantiation_type()
+        self.residuals = None 
+        self.smoothed_ys = None
+        self.zscores = {0.90: 1.65, 0.95: 1.96, 0.99: 2.58}
+    
+    def get_confidence_interval(self, confidence=0.95):
+        """
+        Function that bootstraps residuals for standard deviation, and returns a
+        band size.
+        """
+        self.check_ci_input(confidence) # checking valid confidence interval
+
+        # Performs up to 500 bootstraps.
+        if len(self.residuals) < 500:
+            bs = np.random.choice(self.residuals, (len(self.residuals), len(self.residuals)), replace=True)
+        else:
+            bs = np.random.choice(self.residuals, (500, len(self.residuals)), replace=True)
+
+        # Mean of the bootstrapped standard deviations
+        bs_std = np.mean(np.std(bs, axis=1))
+
+        # Calculated band size (need a better zscore calculator here)
+        band_size = self.zscores[confidence] * bs_std
+
+        return band_size
+
+    def check_instantiation_type(self):
+        """
+        Function to enforce abstract class type.
+        """
+        if type(self) is smoother:
+            raise Exception('smoothing_model is an abstract class and cannot be instantiated directly')
+
+    def check_ci_input(self, ci):
+        '''
+        Validates confidence interval input.
+        '''
+        if type(ci) != float:
+            raise TypeError('Confidence interval must be an float')
+        if ci < 0 or ci > 1:
+            raise ValueError('Confidence interval must be greater than 0 and less than 1')
+        if ci not in self.zscores:
+            raise ValueError('Confidence interval must be one of the following {}'.format(list(self.zscores.keys())))
+        return ci
+
+class linear_regression(smoother):
     """Linear regression model. 
 
     A regression model that models the relationship between a variable x 
@@ -19,6 +82,7 @@ class linear_regression():
         ws (arr[int]): stored model weights
         range (arr[float]): stored range of the x-values
         rmse (float): stored RMSE from model training
+        + attributes from smoother class
 
     Raises
     ---------
@@ -31,43 +95,40 @@ class linear_regression():
     >>> from regressio.datagen import generate_random_walk
     >>> x, y = generate_random_walk(100)
     >>> model = linear_regression(degree=5)
-    >>> model.fit(x, y, plot=True)
+    >>> model.fit(x, y, plot=True, confidence_interval=0.95)
     """
 
     def __init__(self, degree):
+        smoother.__init__(self)
         self.degree = self.check_degree_input(degree)
         self.ws = np.random.random(size=degree).astype(np.float128)
         self.range = [-1,1]
         self.rmse = None
 
-    def fit(self, rawx, y, plot=False):
+    def fit(self, x, y, plot=False, confidence_interval=False):
         '''
         Given input arrays x and y. Fits the model.
         '''
         # Validate input data
-        if len(rawx) != len(y):
+        if len(x) != len(y):
             raise ValueError('x and y must be of the same length')
-        elif len(rawx) <= 1:
+        elif len(x) <= 1:
             raise ValueError('len(x) must be > 1')
 
         # Stores min, max of x for plot_polynomial function
-        self.range = [rawx.min(), rawx.max()]
+        self.range = [x.min(), x.max()]
 
         # Calculate ordinary least squares
-        rawx = rawx.reshape(-1,1)
-        x = np.hstack([(rawx**i) for i in range(self.degree+1)])
-        xTx = x.T.dot(x)
-        xTx_inv = np.linalg.inv(xTx)
-        ws = xTx_inv.dot(x.T.dot(y))
-        self.ws = ws # storing model weights
-        
-        # Calculating MSE
-        training_mse = self.MSE(x, y)
+        x = x.reshape(-1, 1)
+        MSE = self.OLS(x, y)
 
-        # Store model weights and plot results
-        self.ws = ws
+        # Storing residuals and smoothed values
+        self.smoothed_ys = self.predict(x)
+        self.residuals = y - self.smoothed_ys
+
+        # Plot model
         if plot:
-            self.plot_model(rawx, y, training_mse)
+            self.plot_model(x, y, MSE, confidence_interval)
 
     def predict(self, x):
         '''
@@ -77,6 +138,17 @@ class linear_regression():
         preds = np.sum(values, axis=-1)
         return preds
 
+    def OLS(self, x, y):
+        x = x.reshape(-1, 1)
+        x_features = np.hstack([(x**i) for i in range(self.degree+1)])
+        xTx = x_features.T.dot(x_features)
+        xTx_inv = np.linalg.inv(xTx)
+        ws = xTx_inv.dot(x_features.T.dot(y))
+
+        self.ws = ws
+        MSE = self.MSE(x_features, y)
+        return MSE
+
     def MSE(self, x, y):
         '''
         Mean squared error helper function.
@@ -85,21 +157,23 @@ class linear_regression():
         loss = np.mean((y - y_hat) ** 2)
         return loss
 
-    def plot_model(self, x, y, training_mse):
+    def plot_model(self, x, y, MSE, confidence_interval=False):
         '''
         Plots the models hypothetical predictions, MSE, and true data points.
         '''
-        # Creates model prediction line
-        modelx = np.linspace(self.range[0], self.range[1], 1000).reshape([-1, 1])
-        expanded = np.hstack([self.ws[i] * (modelx ** i) for i in range(0, len(self.ws))])
-        modely = np.sum(expanded, axis=-1)
-
-        # Plot training data
+        # Plot model + data points
+        plt.plot(x, self.smoothed_ys, color='tab:orange')
         plt.scatter(x, y)
+
+        # Title + MSE
+        plt.title("{}, Degree: {}, MSE: {:.8f}".format(type(self).__name__, self.degree, MSE))
+
+        # Optional: Plotting confidence interval
+        if confidence_interval:
+            band_size = self.get_confidence_interval(confidence_interval)
+            plt.fill_between(x.flatten(), self.smoothed_ys - band_size, self.smoothed_ys + band_size, color='tab:blue', alpha=0.2)
+            plt.title("{}, MSE: {:.4f}, Confidence Interval: {:.0f}%".format(type(self).__name__, MSE, confidence_interval*100))
         
-        # Plots model prediction line
-        plt.plot(modelx, modely, color='tab:orange')
-        plt.title("{}, Degree: {}, MSE: {:.8f}".format(type(self).__name__, self.degree, training_mse))
         plt.show()
 
     @staticmethod
@@ -113,7 +187,7 @@ class linear_regression():
             raise ValueError('0 <= degree <= 10. Model is unstable for degree > 10.')
         return degree
 
-class linear_spline():
+class linear_spline(smoother):
     """Linear spline model (aka. piecewise simple linear regression).
 
     A linear interpolation model that fits a simple linear regression model 
@@ -132,6 +206,7 @@ class linear_spline():
         slopes (arr[float]): stores piecewise linear model slopes
         last_binvals (arr[float]): stores last y-value of each bin
         knot_vals (arr[float]): stores each knot value
+        + attributes from smoother class
 
     Raises
     ---------
@@ -144,16 +219,17 @@ class linear_spline():
     >>> from regressio.datagen import generate_random_walk
     >>> x, y = generate_random_walk(100)
     >>> model = linear_spline(knots=10)
-    >>> model.fit(x, y, plot=True)
+    >>> model.fit(x, y, plot=True, confidence_interval=0.90)
     """
 
     def __init__(self, knots):
+        smoother.__init__(self)
         self.knots = self.check_knots_input(knots)
         self.slopes = np.zeros(knots)
         self.last_binvals = np.zeros(knots)
         self.knot_vals = None #set knot values model.fit()
         
-    def fit(self, x, y, plot=False):
+    def fit(self, x, y, plot=False, confidence_interval=False):
         '''
         Given input arrays x and y. Fits the model.
         '''
@@ -197,10 +273,14 @@ class linear_spline():
                 self.slopes[i] = slope
 
             ysum = self.last_binvals[i+1]
-    
+
+        # Storing residuals and smoothed values
+        self.smoothed_ys = self.predict(x)
+        self.residuals = y - self.smoothed_ys
+
+        # Plot model
         if plot:
-            # plot fit model
-            self.plot_model(x, y)
+            self.plot_model(x, y, confidence_interval)
 
     def predict(self, x):
         '''
@@ -217,7 +297,7 @@ class linear_spline():
             else:
                 # iterating over every bin  
                 for j in range(len(self.knot_vals)-1):
-                    if x[i] > self.knot_vals[j] and x[i] < self.knot_vals[j+1]:
+                    if x[i] >= self.knot_vals[j] and x[i] < self.knot_vals[j+1]:
                         preds[i] = self.line(x_raw, self.slopes[j], self.last_binvals[j])
                         broke = True
                         break
@@ -241,20 +321,24 @@ class linear_spline():
         ws = xTx_inv.dot(x.T.dot(y))
         return ws
         
-    def plot_model(self, x, y):
+    def plot_model(self, x, y, confidence_interval=False):
         '''
         Plots the models hypothetical predictions, MSE, and true data points.
         '''
+        # Plot model + data points
         plt.plot(self.knot_vals, self.last_binvals, color='tab:orange')
         plt.scatter(x, y)
 
-        preds = self.predict(x)
-        MSE = np.mean((y - preds) ** 2)
-        
+        # MSE + title
+        MSE = np.mean((self.residuals) ** 2)
         plt.title("{}, Knots: {}, MSE: {:.8f}".format(type(self).__name__, self.knots, MSE))
 
-        for i in range(len(self.knot_vals)):
-            plt.axvline(x = self.knot_vals[i], alpha=0.2)
+        # Optional: Plotting confidence interval
+        if confidence_interval:
+            band_size = self.get_confidence_interval(confidence_interval)
+            plt.fill_between(x.flatten(), self.smoothed_ys - band_size, self.smoothed_ys + band_size, color='tab:blue', alpha=0.2)
+            plt.title("{}, MSE: {:.4f}, Confidence Interval: {:.0f}%".format(type(self).__name__, MSE, confidence_interval*100))
+
         plt.show()
 
     @staticmethod
@@ -306,6 +390,7 @@ class isotonic_regression(linear_spline):
         slopes (arr[float]): stores piecewise linear model slopes
         last_binvals (arr[float]): stores last y-value of each bin
         knot_vals (arr[float]): stores each knot value
+        + attributes from smoother class
 
     Raises
     ---------
@@ -318,10 +403,12 @@ class isotonic_regression(linear_spline):
     >>> from regressio.datagen import generate_isotonic_sample
     >>> x, y = generate_isotonic_sample(100)
     >>> model = isotonic_regression(knots=12)
-    >>> model.fit(x, y, plot=True)
+    >>> model.fit(x, y, plot=True, confidence_interval=0.99)
     """
+    def __init__(self, knots):
+        linear_spline.__init__(self, knots)
 
-    def fit(self, x, y, plot=False):
+    def fit(self, x, y, plot=False, confidence_interval=False):
         '''
         Given input arrays x and y. Fits the model.
         '''
@@ -352,10 +439,14 @@ class isotonic_regression(linear_spline):
             last_binval = self.line(self.knot_vals[1] - self.knot_vals[0], slope, last_binval)
             self.last_binvals[i+1] = last_binval
             ysum += last_binval
+        
+        # Storing residuals and smoothed values
+        self.smoothed_ys = self.predict(x)
+        self.residuals = y - self.smoothed_ys
     
         if plot:
             # plot fit model
-            self.plot_model(x, y)
+            self.plot_model(x, y, confidence_interval)
 
     @staticmethod
     def ISO_OLS(x, y):
@@ -369,7 +460,7 @@ class isotonic_regression(linear_spline):
         slope = xTx_inv.dot(x.T.dot(y))
         return max(np.asarray([0]), slope)
 
-class bin_regression():
+class bin_regression(smoother):
     """Bin regression model.
 
     Bin regression is when a data sample is divided into intervals, and the prediction
@@ -384,6 +475,7 @@ class bin_regression():
         bins (int): the number of bins
         bin_ys (arr[float]): the mean value of each bin
         bin_vals (arr[float]): the endpoints of each bin
+        + attributes from smoother class
 
     Raises
     ---------
@@ -396,15 +488,16 @@ class bin_regression():
     >>> from regressio.datagen import generate_random_walk
     >>> x, y = generate_random_walk(150)
     >>> model = bin_regression(bins=8)
-    >>> model.fit(x, y, plot=True)
+    >>> model.fit(x, y, plot=True, confidence_interval=0.99)
     """
 
     def __init__(self, bins):
+        smoother.__init__(self)
         self.bins = self.check_bins_input(bins) # number of bins
         self.bin_ys = np.zeros(bins) # stores each bin y value
         self.bin_vals = None #set bin values model.fit()
 
-    def fit(self, x, y, plot=False):
+    def fit(self, x, y, plot=False, confidence_interval=False):
         '''
         Given input arrays x and y. Fits the model.
         '''
@@ -419,10 +512,14 @@ class bin_regression():
             bin_y = y[np.logical_and(x>=self.bin_vals[i], x<=self.bin_vals[i+1]).flatten()]
             self.check_bin(i, bin_y)
             self.bin_ys[i] = np.mean(bin_y)
+
+        # Storing residuals and smoothed values
+        self.smoothed_ys = self.predict(x)
+        self.residuals = y - self.smoothed_ys
     
+        # Plot model
         if plot:
-            # plot fit model
-            self.plot_model(x, y)
+            self.plot_model(x, y, confidence_interval)
 
     def predict(self, x):
         '''
@@ -437,7 +534,7 @@ class bin_regression():
             else:
                 # iterating until in correct bin
                 for j in range(len(self.bin_vals)-1):
-                    if x[i] > self.bin_vals[j] and x[i] < self.bin_vals[j+1]:
+                    if x[i] >= self.bin_vals[j] and x[i] < self.bin_vals[j+1]:
                         preds[i] = self.bin_ys[j]
                         broke = True
                         break
@@ -445,21 +542,24 @@ class bin_regression():
                     preds[i] = self.bin_ys[-1]
         return preds
         
-    def plot_model(self, x, y):
+    def plot_model(self, x, y, confidence_interval=False):
         '''
         Plots the models hypothetical predictions, MSE, and true data points.
         '''
-        # Plot each bin value twice (left and right limit).
+        # Plot each bin (left + right limit) + data points
         plt.plot(np.repeat(self.bin_vals, 2)[1:-1], np.repeat(self.bin_ys, 2), color='tab:orange')
         plt.scatter(x, y)
 
-        preds = self.predict(x)
-        MSE = np.mean((y - preds) ** 2)
-        
+        # MSE + Title
+        MSE = np.mean((self.residuals) ** 2)
         plt.title("{}, Bins: {}, MSE: {:.8f}".format(type(self).__name__, self.bins, MSE))
 
-        for i in range(len(self.bin_vals)):
-            plt.axvline(x = self.bin_vals[i], alpha=0.2)
+        # Optional: Plotting confidence interval
+        if confidence_interval:
+            band_size = self.get_confidence_interval(confidence_interval)
+            plt.fill_between(x.flatten(), self.smoothed_ys - band_size, self.smoothed_ys + band_size, color='tab:blue', alpha=0.2)
+            plt.title("{}, MSE: {:.4f}, Confidence Interval: {:.0f}%".format(type(self).__name__, MSE, confidence_interval*100))
+        
         plt.show()
 
     @staticmethod
@@ -481,7 +581,7 @@ class bin_regression():
             raise ValueError('bins must be >= 1')
         return bins
 
-class cubic_spline():
+class cubic_spline(smoother):
     """Cubic spline model.
 
     Cubic spline is a spline constructed of multiple cubic piecewise 
@@ -500,6 +600,7 @@ class cubic_spline():
         knot_xvals (arr[float]): knot x values
         knot_yvals (arr[float]): knot y values
         ws (arr[float]): piecewise model weights
+        + attributes from smoother class
 
     Raises
     ---------
@@ -512,7 +613,7 @@ class cubic_spline():
     >>> from regressio.datagen import generate_random_walk
     >>> x, y = generate_random_walk(150)
     >>> model = cubic_spline(pieces=15)
-    >>> model.fit(x, y, plot=True)
+    >>> model.fit(x, y, plot=True, confidence_interval=0.90)
 
     Reference
     ----------
@@ -522,12 +623,13 @@ class cubic_spline():
     """
 
     def __init__(self, pieces):
+        smoother.__init__(self)
         self.pieces = self.check_input_pieces(pieces)
         self.knot_xvals = None
         self.knot_yvals = None
         self.ws = None # stores weights for each piecewise polynomial
 
-    def fit(self, x, y, plot=False):
+    def fit(self, x, y, plot=False, confidence_interval=False):
         '''
         Given input arrays x and y. Fits the model.
         '''
@@ -547,9 +649,13 @@ class cubic_spline():
         # Calculate weights of each piecewise function
         self.ws = self.calc_piecewise_weights(self.knot_xvals, self.knot_yvals)
 
+        # Storing residuals and smoothed values
+        self.smoothed_ys = self.predict(x)
+        self.residuals = y - self.smoothed_ys
+
         # Plot model
         if plot:
-            self.plot_model(x, y)
+            self.plot_model(x, y, confidence_interval)
 
     def calc_piecewise_weights(self, x, y):
         '''
@@ -624,24 +730,26 @@ class cubic_spline():
         ys[insert_pos:insert_pos + len(ys_to_add)] = ys_to_add
         return ys
 
-    def plot_model(self, x, y):
+    def plot_model(self, x, y, confidence_interval=False):
         '''
         Plots the models hypothetical predictions, MSE, and true data points.
         '''
         # Plot hypothetical model values
-        modelx = np.linspace(self.knot_xvals[0], self.knot_xvals[-1], self.pieces*10)
-        modely = self.predict(modelx)
-        plt.plot(modelx, modely, color='tab:orange')
+        plt.plot(x, self.smoothed_ys, color='tab:orange')
 
         # Plot data values
         plt.scatter(x, y)
         
-        MSE = np.mean((y - self.predict(x)) ** 2)
+        # MSE + Title
+        MSE = np.mean(self.residuals ** 2)
         plt.title("{}, Pieces: {}, MSE: {:.8f}".format(type(self).__name__, self.pieces, MSE))
-
-        # Add piece boundaries to plot
-        for i in range(len(self.knot_xvals)):
-            plt.axvline(x = self.knot_xvals[i], alpha=0.2)
+        
+        # Optional: Plotting confidence interval
+        if confidence_interval:
+            band_size = self.get_confidence_interval(confidence_interval)
+            plt.fill_between(x.flatten(), self.smoothed_ys - band_size, self.smoothed_ys + band_size, color='tab:blue', alpha=0.2)
+            plt.title("{}, MSE: {:.4f}, Confidence Interval: {:.0f}%".format(type(self).__name__, MSE, confidence_interval*100))
+        
         plt.show()
 
     @staticmethod
@@ -700,6 +808,7 @@ class natural_cubic_spline(cubic_spline):
         knot_xvals (arr[float]): knot x values
         knot_yvals (arr[float]): knot y values
         ws (arr[float]): piecewise model weights
+        + attributes from smoother class
 
     Raises
     ---------
@@ -712,7 +821,7 @@ class natural_cubic_spline(cubic_spline):
     >>> from regressio.datagen import generate_random_walk
     >>> x, y = generate_random_walk(200)
     >>> model = natural_cubic_spline(pieces=10)
-    >>> model.fit(x, y, plot=True)
+    >>> model.fit(x, y, plot=True, confidence_interval=0.95)
 
     Reference
     ----------
@@ -721,10 +830,7 @@ class natural_cubic_spline(cubic_spline):
     pythonnumericalmethods.berkeley.edu, Accessed 2022. 
     """
     def __init__(self, pieces):
-        self.pieces = self.check_input_pieces(pieces)
-        self.knot_xvals = None
-        self.knot_yvals = None
-        self.ws = None # stores weights for each piecewise polynomial
+        cubic_spline.__init__(self, pieces)
 
     def predict(self, xs):
         '''
@@ -772,7 +878,7 @@ class natural_cubic_spline(cubic_spline):
     def line(x, slope, intercept):
         return (slope*x) + intercept
 
-class exponential_smoother():
+class exponential_smoother(smoother):
     """Exponential smoothing model.
 
     An iterative model that make predictions based on the weighted moving average of past 
@@ -789,6 +895,7 @@ class exponential_smoother():
     Attributes
     ---------
         alpha: the starting weight of previous value
+        + attributes from smoother class
 
     Raises
     ---------
@@ -801,7 +908,7 @@ class exponential_smoother():
     >>> from regressio.datagen import generate_random_walk
     >>> x, y = generate_random_walk(200)
     >>> model = exponential_smoother(alpha=0.1)
-    >>> model.fit(x, y, plot=True)
+    >>> model.fit(x, y, plot=True, confidence_interval=0.99)
 
     Reference
     ----------
@@ -810,9 +917,10 @@ class exponential_smoother():
     """
     
     def __init__(self, alpha=0.2):
+        smoother.__init__(self)
         self.alpha = self.check_alpha(alpha)
 
-    def fit(self, x, y, plot=False):
+    def fit(self, x, y, plot=False, confidence_interval=False):
         '''
         Given arrays x and y, returns exponentially smoothed y values.
         '''
@@ -827,22 +935,34 @@ class exponential_smoother():
         for i in range(1, len(y)):
             smoothed_ys[i] = self.alpha*y[i-1] + (1-self.alpha)*smoothed_ys[i-1]
 
-        if plot:
-            self.plot_model(x, y, smoothed_ys)
+        # Storing residuals and smoothed values
+        self.smoothed_ys = smoothed_ys
+        self.residuals = y - smoothed_ys
 
-    def plot_model(self, x, y, smoothed_ys):
+        if plot:
+            self.plot_model(x, y, confidence_interval)
+
+    def plot_model(self, x, y, confidence_interval=False):
         '''
-        Plots the smoothed model, MSE, and true data points.
+        Plots the smoothed model, MSE, and true data points and an 
+        optional confidence interval.
         '''
         # Plot smoothed model values
-        plt.plot(x, smoothed_ys, color='tab:orange')
+        plt.plot(x, self.smoothed_ys, color='tab:orange')
         
         # Plot actual data values
         plt.scatter(x, y)
         
         # MSE and Title
-        MSE = np.mean((y - smoothed_ys) ** 2)
+        MSE = np.mean(self.residuals ** 2)
         plt.title("{}, MSE: {:.8f}".format(type(self).__name__, MSE))
+        
+        # Optional confidence interval plot
+        if confidence_interval:
+            band_size = self.get_confidence_interval(confidence_interval)
+            plt.fill_between(x, self.smoothed_ys - band_size, self.smoothed_ys + band_size, color='tab:blue', alpha=0.2)
+            plt.title("{}, MSE: {:.4f}, Confidence Interval: {:.0f}%".format(type(self).__name__, MSE, confidence_interval*100))
+        
         plt.show()
 
     @staticmethod
