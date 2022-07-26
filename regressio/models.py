@@ -161,8 +161,13 @@ class linear_regression(smoother):
         '''
         Plots the models hypothetical predictions, MSE, and true data points.
         '''
-        # Plot model + data points
-        plt.plot(x, self.smoothed_ys, color='tab:orange')
+        # Plot hypothetical model values
+        modelx = np.linspace(self.range[0], self.range[1], 1000).reshape([-1, 1])
+        expanded = np.hstack([self.ws[i] * (modelx ** i) for i in range(0, len(self.ws))])
+        modely = np.sum(expanded, axis=-1)
+        plt.plot(modelx, modely, color='tab:orange')
+
+        # Plot data
         plt.scatter(x, y)
 
         # Title + MSE
@@ -735,7 +740,9 @@ class cubic_spline(smoother):
         Plots the models hypothetical predictions, MSE, and true data points.
         '''
         # Plot hypothetical model values
-        plt.plot(x, self.smoothed_ys, color='tab:orange')
+        modelx = np.linspace(self.knot_xvals[0], self.knot_xvals[-1], self.pieces*10)
+        modely = self.predict(modelx)
+        plt.plot(modelx, modely, color='tab:orange')
 
         # Plot data values
         plt.scatter(x, y)
