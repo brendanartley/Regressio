@@ -225,6 +225,12 @@ class ridge_regression(linear_regression):
     >>> x, y = generate_random_walk(100)
     >>> model = ridge_regression(degree=5, alpha=0.5)
     >>> model.fit(x, y, plot=True, confidence_interval=0.95)
+    
+    Reference
+    ----------
+    Li, Bao, (2022). Stat 508: Applied Data Mining, Statistical 
+    Learning: Stat Online. PennState: Statistics Online Courses. 
+    Accessed July 2022.
     """
 
     def __init__(self, degree, alpha=0.1):
@@ -698,7 +704,7 @@ class cubic_spline(smoother):
     ----------
     Kong, Qingkai, et al. Python Programming and Numerical Methods: A Guide for 
     Engineers and Scientists. Academic Press, an Imprint of Elsevier, 
-    pythonnumericalmethods.berkeley.edu, Accessed 2022. 
+    pythonnumericalmethods.berkeley.edu, Accessed July 2022. 
     """
 
     def __init__(self, pieces):
@@ -903,12 +909,6 @@ class natural_cubic_spline(cubic_spline):
     >>> x, y = generate_random_walk(200)
     >>> model = natural_cubic_spline(pieces=10)
     >>> model.fit(x, y, plot=True, confidence_interval=0.95)
-
-    Reference
-    ----------
-    Kong, Qingkai, et al. Python Programming and Numerical Methods: A Guide for 
-    Engineers and Scientists. Academic Press, an Imprint of Elsevier, 
-    pythonnumericalmethods.berkeley.edu, Accessed 2022. 
     """
     def __init__(self, pieces):
         cubic_spline.__init__(self, pieces)
