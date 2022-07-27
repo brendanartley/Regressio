@@ -6,6 +6,7 @@ Regressio is a python module for univariate regression, interpolation, and smoot
 
 The available models are:
 - Linear Regression
+- Ridge Regression
 - Linear Spline
 - Isotonic Regression
 - Bin Regression
@@ -21,7 +22,7 @@ The available data generators are:
 
 ## Installation
 
-Regressio is supported in Python 3.6+ or above and requires only NumPy and Matplotlib.
+Regressio is supported in Python 3.8+ and requires only NumPy and Matplotlib.
 
 `pip install git+https://github.com/brendanartley/Regressio`
 
@@ -99,4 +100,6 @@ For more examples, navigate to the [examples.ipynb](examples.ipynb) file in this
 
 - Hyndman, R.J., & Athanasopoulos, G. (2021) Forecasting: principles and practice, 3rd edition, OTexts: Melbourne, Australia. OTexts.com/fpp3. Accessed July 2022. 
 
-- Kong, Qingkai, et al. Python Programming and Numerical Methods: A Guide for Engineers and Scientists. Academic Press, an Imprint of Elsevier, pythonnumericalmethods.berkeley.edu, Accessed 2022. 
+- Kong, Qingkai, et al. Python Programming and Numerical Methods: A Guide for Engineers and Scientists. Academic Press, an Imprint of Elsevier, pythonnumericalmethods.berkeley.edu, Accessed July 2022. 
+
+- Li, Bao, (2022). Stat 508: Applied Data Mining, Statistical Learning: Stat Online. PennState: Statistics Online Courses, online.stat.psu.edu/stat508, Accessed July 2022.

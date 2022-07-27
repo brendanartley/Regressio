@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from statistics import NormalDist
 
 class smoother(object):
     """
@@ -11,7 +12,6 @@ class smoother(object):
         residuals (arr[int | float]): stored residuals
         smoothed_ys (arr[int | float]): stored smoothed values
         zscore (dict): dictionary of confidence z-scores
-        # TODO: Calculate z-score for any x. (0 < x < 1) 
 
     Raises
     ---------
@@ -22,7 +22,6 @@ class smoother(object):
         self.check_instantiation_type()
         self.residuals = None 
         self.smoothed_ys = None
-        self.zscores = {0.90: 1.65, 0.95: 1.96, 0.99: 2.58}
     
     def get_confidence_interval(self, confidence=0.95):
         """
@@ -40,8 +39,9 @@ class smoother(object):
         # Mean of the bootstrapped standard deviations
         bs_std = np.mean(np.std(bs, axis=1))
 
-        # Calculated band size (need a better zscore calculator here)
-        band_size = self.zscores[confidence] * bs_std
+        # Calc Z-score + band_size. Inverse CDF calculation.
+        z_score = NormalDist().inv_cdf((1 + confidence) / 2.)
+        band_size = z_score * bs_std
 
         return band_size
 
@@ -58,10 +58,10 @@ class smoother(object):
         '''
         if type(ci) != float:
             raise TypeError('Confidence interval must be an float')
-        if ci < 0 or ci > 1:
+        if ci <= 0 or ci > 1:
             raise ValueError('Confidence interval must be greater than 0 and less than 1')
-        if ci not in self.zscores:
-            raise ValueError('Confidence interval must be one of the following {}'.format(list(self.zscores.keys())))
+        if ci == 1: #edge case where random number generated is 1
+            return 1 - np.finfo(np.float64).eps
         return ci
 
 class linear_regression(smoother):
@@ -139,12 +139,16 @@ class linear_regression(smoother):
         return preds
 
     def OLS(self, x, y):
+        # Constructing features 1, x^1, x^2 .. x^n
         x = x.reshape(-1, 1)
         x_features = np.hstack([(x**i) for i in range(self.degree+1)])
+
+        # OLS Calculation
         xTx = x_features.T.dot(x_features)
         xTx_inv = np.linalg.inv(xTx)
         ws = xTx_inv.dot(x_features.T.dot(y))
 
+        # Storing weights + returning MSE
         self.ws = ws
         MSE = self.MSE(x_features, y)
         return MSE
@@ -161,18 +165,23 @@ class linear_regression(smoother):
         '''
         Plots the models hypothetical predictions, MSE, and true data points.
         '''
-        # Plot model + data points
-        plt.plot(x, self.smoothed_ys, color='tab:orange')
+        # Plot hypothetical model values
+        modelx = np.linspace(self.range[0], self.range[1], 1000).reshape([-1, 1])
+        expanded = np.hstack([self.ws[i] * (modelx ** i) for i in range(0, len(self.ws))])
+        modely = np.sum(expanded, axis=-1)
+        plt.plot(modelx, modely, color='tab:orange')
+
+        # Plot data
         plt.scatter(x, y)
 
         # Title + MSE
-        plt.title("{}, Degree: {}, MSE: {:.8f}".format(type(self).__name__, self.degree, MSE))
+        plt.title("{}, Degree: {}, MSE: {:.4f}".format(type(self).__name__, self.degree, MSE))
 
         # Optional: Plotting confidence interval
         if confidence_interval:
             band_size = self.get_confidence_interval(confidence_interval)
-            plt.fill_between(x.flatten(), self.smoothed_ys - band_size, self.smoothed_ys + band_size, color='tab:blue', alpha=0.2)
-            plt.title("{}, MSE: {:.4f}, Confidence Interval: {:.0f}%".format(type(self).__name__, MSE, confidence_interval*100))
+            plt.fill_between(modelx.flatten(), modely - band_size, modely + band_size, color='tab:blue', alpha=0.2)
+            plt.title("{}, MSE: {:.4f}, Confidence Interval: {:.8g}%".format(type(self).__name__, MSE, confidence_interval*100))
         
         plt.show()
 
@@ -186,6 +195,77 @@ class linear_regression(smoother):
         elif degree < 0 or degree > 10:
             raise ValueError('0 <= degree <= 10. Model is unstable for degree > 10.')
         return degree
+
+class ridge_regression(linear_regression):
+    """Ridge regression model.
+
+    Child of the linear_regression class. Differs in that a penalty
+    term is added. This penalty term penalizes large squared model 
+    weights and reduces the likelihood of overfitting.
+
+    Args
+    ---------
+        alpha: the magnitude of the penalty term
+        degree: the degree of the polynomial
+
+    Attributes
+    ---------
+        alpha: the magnitude of the penalty term
+        + attributes from linear_regression class
+
+    Raises
+    ---------
+        TypeError: if knots is not a number
+        ValueError: if alpha <= 0
+
+    Example
+    ---------
+    >>> from regressio.models import ridge_regression
+    >>> from regressio.datagen import generate_random_walk
+    >>> x, y = generate_random_walk(100)
+    >>> model = ridge_regression(degree=5, alpha=0.5)
+    >>> model.fit(x, y, plot=True, confidence_interval=0.95)
+    
+    Reference
+    ----------
+    Li, Bao, (2022). Stat 508: Applied Data Mining, Statistical 
+    Learning: Stat Online. PennState: Statistics Online Courses, 
+    online.stat.psu.edu/stat508, Accessed July 2022.
+    """
+
+    def __init__(self, degree, alpha=0.1):
+        linear_regression.__init__(self, degree)
+        self.alpha = self.check_alpha_input(alpha)
+
+    def OLS(self, x, y):
+        # Constructing features 1, x^1, x^2 .. x^n
+        x = x.reshape(-1, 1)
+        x_features = np.hstack([(x**i) for i in range(self.degree+1)])
+        
+        # Constructing L2 penalty matrix (Ridge)
+        A = np.identity(self.degree+1) * self.alpha
+        A[0,0] = 0
+
+        # OLS Calculation
+        xTx = x_features.T.dot(x_features)
+        xTx_inv = np.linalg.inv(xTx + A)
+        ws = xTx_inv.dot(x_features.T.dot(y))
+
+        # Storing weights + returning MSE
+        self.ws = ws
+        MSE = self.MSE(x_features, y)
+        return MSE
+
+    @staticmethod
+    def check_alpha_input(alpha):
+        '''
+        Validates alpha input.
+        '''
+        if type(alpha) not in [float, int]:
+            raise TypeError('alpha must be an float or int')
+        elif alpha <= 0:
+            raise ValueError('alpha must be > 0')
+        return alpha
 
 class linear_spline(smoother):
     """Linear spline model (aka. piecewise simple linear regression).
@@ -311,11 +391,14 @@ class linear_spline(smoother):
         
     def OLS_linear_spline(self, x, y, first=False):
         '''
-        Modified OLS. Intercept constrained for all bins except for the first.
+        Modified OLS. Intercept is constrained for all bins except for the first.
         '''
+        # Creating Features
         x = x.reshape(-1,1)
         if first:
-            x = np.hstack([(x**i) for i in range(2)])
+            x = np.hstack([(x**i) for i in range(2)]) # include slope if first line
+        
+        # OLS Calculation
         xTx = x.T.dot(x)
         xTx_inv = np.linalg.inv(xTx)
         ws = xTx_inv.dot(x.T.dot(y))
@@ -337,7 +420,7 @@ class linear_spline(smoother):
         if confidence_interval:
             band_size = self.get_confidence_interval(confidence_interval)
             plt.fill_between(x.flatten(), self.smoothed_ys - band_size, self.smoothed_ys + band_size, color='tab:blue', alpha=0.2)
-            plt.title("{}, MSE: {:.4f}, Confidence Interval: {:.0f}%".format(type(self).__name__, MSE, confidence_interval*100))
+            plt.title("{}, MSE: {:.4f}, Confidence Interval: {:.8g}%".format(type(self).__name__, MSE, confidence_interval*100))
 
         plt.show()
 
@@ -547,7 +630,9 @@ class bin_regression(smoother):
         Plots the models hypothetical predictions, MSE, and true data points.
         '''
         # Plot each bin (left + right limit) + data points
-        plt.plot(np.repeat(self.bin_vals, 2)[1:-1], np.repeat(self.bin_ys, 2), color='tab:orange')
+        modelx = np.repeat(self.bin_vals, 2)[1:-1]
+        modely = np.repeat(self.bin_ys, 2)
+        plt.plot(modelx, modely, color='tab:orange')
         plt.scatter(x, y)
 
         # MSE + Title
@@ -557,8 +642,8 @@ class bin_regression(smoother):
         # Optional: Plotting confidence interval
         if confidence_interval:
             band_size = self.get_confidence_interval(confidence_interval)
-            plt.fill_between(x.flatten(), self.smoothed_ys - band_size, self.smoothed_ys + band_size, color='tab:blue', alpha=0.2)
-            plt.title("{}, MSE: {:.4f}, Confidence Interval: {:.0f}%".format(type(self).__name__, MSE, confidence_interval*100))
+            plt.fill_between(modelx, modely - band_size, modely + band_size, color='tab:blue', alpha=0.2)
+            plt.title("{}, MSE: {:.4f}, Confidence Interval: {:.8g}%".format(type(self).__name__, MSE, confidence_interval*100))
         
         plt.show()
 
@@ -619,7 +704,7 @@ class cubic_spline(smoother):
     ----------
     Kong, Qingkai, et al. Python Programming and Numerical Methods: A Guide for 
     Engineers and Scientists. Academic Press, an Imprint of Elsevier, 
-    pythonnumericalmethods.berkeley.edu, Accessed 2022. 
+    pythonnumericalmethods.berkeley.edu, Accessed July 2022. 
     """
 
     def __init__(self, pieces):
@@ -735,7 +820,9 @@ class cubic_spline(smoother):
         Plots the models hypothetical predictions, MSE, and true data points.
         '''
         # Plot hypothetical model values
-        plt.plot(x, self.smoothed_ys, color='tab:orange')
+        modelx = np.linspace(self.knot_xvals[0], self.knot_xvals[-1], self.pieces*10)
+        modely = self.predict(modelx)
+        plt.plot(modelx, modely, color='tab:orange')
 
         # Plot data values
         plt.scatter(x, y)
@@ -747,8 +834,8 @@ class cubic_spline(smoother):
         # Optional: Plotting confidence interval
         if confidence_interval:
             band_size = self.get_confidence_interval(confidence_interval)
-            plt.fill_between(x.flatten(), self.smoothed_ys - band_size, self.smoothed_ys + band_size, color='tab:blue', alpha=0.2)
-            plt.title("{}, MSE: {:.4f}, Confidence Interval: {:.0f}%".format(type(self).__name__, MSE, confidence_interval*100))
+            plt.fill_between(modelx, modely - band_size, modely + band_size, color='tab:blue', alpha=0.2)
+            plt.title("{}, MSE: {:.4f}, Confidence Interval: {:.8g}%".format(type(self).__name__, MSE, confidence_interval*100))
         
         plt.show()
 
@@ -822,12 +909,6 @@ class natural_cubic_spline(cubic_spline):
     >>> x, y = generate_random_walk(200)
     >>> model = natural_cubic_spline(pieces=10)
     >>> model.fit(x, y, plot=True, confidence_interval=0.95)
-
-    Reference
-    ----------
-    Kong, Qingkai, et al. Python Programming and Numerical Methods: A Guide for 
-    Engineers and Scientists. Academic Press, an Imprint of Elsevier, 
-    pythonnumericalmethods.berkeley.edu, Accessed 2022. 
     """
     def __init__(self, pieces):
         cubic_spline.__init__(self, pieces)
@@ -961,7 +1042,7 @@ class exponential_smoother(smoother):
         if confidence_interval:
             band_size = self.get_confidence_interval(confidence_interval)
             plt.fill_between(x, self.smoothed_ys - band_size, self.smoothed_ys + band_size, color='tab:blue', alpha=0.2)
-            plt.title("{}, MSE: {:.4f}, Confidence Interval: {:.0f}%".format(type(self).__name__, MSE, confidence_interval*100))
+            plt.title("{}, MSE: {:.4f}, Confidence Interval: {:.8g}%".format(type(self).__name__, MSE, confidence_interval*100))
         
         plt.show()
 
