@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from statistics import NormalDist
 
 class smoother(object):
     """
@@ -22,7 +23,6 @@ class smoother(object):
         self.check_instantiation_type()
         self.residuals = None 
         self.smoothed_ys = None
-        self.zscores = {0.90: 1.65, 0.95: 1.96, 0.99: 2.58}
     
     def get_confidence_interval(self, confidence=0.95):
         """
@@ -41,7 +41,8 @@ class smoother(object):
         bs_std = np.mean(np.std(bs, axis=1))
 
         # Calculated band size (need a better zscore calculator here)
-        band_size = self.zscores[confidence] * bs_std
+        z_score = NormalDist().inv_cdf((1 + confidence) / 2.)
+        band_size = z_score * bs_std
 
         return band_size
 
@@ -58,10 +59,10 @@ class smoother(object):
         '''
         if type(ci) != float:
             raise TypeError('Confidence interval must be an float')
-        if ci < 0 or ci > 1:
+        if ci == 1: #edge case where random number generated is 1
+            return 1 - np.finfo(np.float64).eps
+        if ci <= 0 or ci > 1:
             raise ValueError('Confidence interval must be greater than 0 and less than 1')
-        if ci not in self.zscores:
-            raise ValueError('Confidence interval must be one of the following {}'.format(list(self.zscores.keys())))
         return ci
 
 class linear_regression(smoother):
@@ -171,13 +172,13 @@ class linear_regression(smoother):
         plt.scatter(x, y)
 
         # Title + MSE
-        plt.title("{}, Degree: {}, MSE: {:.8f}".format(type(self).__name__, self.degree, MSE))
+        plt.title("{}, Degree: {}, MSE: {:.4f}".format(type(self).__name__, self.degree, MSE))
 
         # Optional: Plotting confidence interval
         if confidence_interval:
             band_size = self.get_confidence_interval(confidence_interval)
             plt.fill_between(x.flatten(), self.smoothed_ys - band_size, self.smoothed_ys + band_size, color='tab:blue', alpha=0.2)
-            plt.title("{}, MSE: {:.4f}, Confidence Interval: {:.0f}%".format(type(self).__name__, MSE, confidence_interval*100))
+            plt.title("{}, MSE: {:.4f}, Confidence Interval: {:.8g}%".format(type(self).__name__, MSE, confidence_interval*100))
         
         plt.show()
 
@@ -342,7 +343,7 @@ class linear_spline(smoother):
         if confidence_interval:
             band_size = self.get_confidence_interval(confidence_interval)
             plt.fill_between(x.flatten(), self.smoothed_ys - band_size, self.smoothed_ys + band_size, color='tab:blue', alpha=0.2)
-            plt.title("{}, MSE: {:.4f}, Confidence Interval: {:.0f}%".format(type(self).__name__, MSE, confidence_interval*100))
+            plt.title("{}, MSE: {:.4f}, Confidence Interval: {:.8g}%".format(type(self).__name__, MSE, confidence_interval*100))
 
         plt.show()
 
@@ -563,7 +564,7 @@ class bin_regression(smoother):
         if confidence_interval:
             band_size = self.get_confidence_interval(confidence_interval)
             plt.fill_between(x.flatten(), self.smoothed_ys - band_size, self.smoothed_ys + band_size, color='tab:blue', alpha=0.2)
-            plt.title("{}, MSE: {:.4f}, Confidence Interval: {:.0f}%".format(type(self).__name__, MSE, confidence_interval*100))
+            plt.title("{}, MSE: {:.4f}, Confidence Interval: {:.8g}%".format(type(self).__name__, MSE, confidence_interval*100))
         
         plt.show()
 
@@ -755,7 +756,7 @@ class cubic_spline(smoother):
         if confidence_interval:
             band_size = self.get_confidence_interval(confidence_interval)
             plt.fill_between(x.flatten(), self.smoothed_ys - band_size, self.smoothed_ys + band_size, color='tab:blue', alpha=0.2)
-            plt.title("{}, MSE: {:.4f}, Confidence Interval: {:.0f}%".format(type(self).__name__, MSE, confidence_interval*100))
+            plt.title("{}, MSE: {:.4f}, Confidence Interval: {:.8g}%".format(type(self).__name__, MSE, confidence_interval*100))
         
         plt.show()
 
@@ -968,7 +969,7 @@ class exponential_smoother(smoother):
         if confidence_interval:
             band_size = self.get_confidence_interval(confidence_interval)
             plt.fill_between(x, self.smoothed_ys - band_size, self.smoothed_ys + band_size, color='tab:blue', alpha=0.2)
-            plt.title("{}, MSE: {:.4f}, Confidence Interval: {:.0f}%".format(type(self).__name__, MSE, confidence_interval*100))
+            plt.title("{}, MSE: {:.4f}, Confidence Interval: {:.8g}%".format(type(self).__name__, MSE, confidence_interval*100))
         
         plt.show()
 
