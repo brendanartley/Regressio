@@ -229,8 +229,8 @@ class ridge_regression(linear_regression):
     Reference
     ----------
     Li, Bao, (2022). Stat 508: Applied Data Mining, Statistical 
-    Learning: Stat Online. PennState: Statistics Online Courses. 
-    Accessed July 2022.
+    Learning: Stat Online. PennState: Statistics Online Courses, 
+    online.stat.psu.edu/stat508, Accessed July 2022.
     """
 
     def __init__(self, degree, alpha=0.1):
