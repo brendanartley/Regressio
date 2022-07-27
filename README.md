@@ -22,7 +22,7 @@ The available data generators are:
 
 ## Installation
 
-Regressio is supported in Python 3.6+ or above and requires only NumPy and Matplotlib.
+Regressio is supported in Python 3.8+ and requires only NumPy and Matplotlib.
 
 `pip install git+https://github.com/brendanartley/Regressio`
 
