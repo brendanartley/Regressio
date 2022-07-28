@@ -721,7 +721,7 @@ class cubic_spline(smoother):
         if len(x) != len(y):
             raise ValueError('x and y must be of the same length')
         if len(x) <= self.pieces:
-            raise ValueError('len(x) must be greater than number of pieces')
+            raise ValueError('max number of pieces is len(x) - 1')
 
         # Values must be sorted for knot calculation
         y = y[x.argsort()]
@@ -846,15 +846,21 @@ class cubic_spline(smoother):
         '''
         knot_ys = np.zeros(len(knot_vals))
         for i, knot in enumerate(knot_vals):
-            # binary search as xs are sorted
-            # np.floor() rounds in the negative direction for both - and +
-            index = np.searchsorted(xs, np.floor(knot))
-            # Use data point on knot
-            if int(knot) == knot:
-                knot_ys[i] = ys[index]
-            # Use mean between closest left + right data points
+            # If knot is a data point, uses data point
+            if knot in xs:
+                knot_ys[i] = ys[np.where(xs == knot)[0][0]]
+            
+            # If not, take the weighted average of closest points
             else:
-                knot_ys[i] = np.mean(ys[index:index+2])
+                # Getting first element larger than the knot
+                index = np.where(xs > knot)[0][0]
+                
+                # Getting x-distance between closest points 
+                ld = knot - xs[index-1]
+                rd = xs[index] - knot
+
+                # Calculate weighted average
+                knot_ys[i] = np.average(ys[index-1:index+1], weights=[rd, ld])
         return knot_ys
 
     @staticmethod
