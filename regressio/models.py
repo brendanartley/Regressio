@@ -846,11 +846,13 @@ class cubic_spline(smoother):
         '''
         knot_ys = np.zeros(len(knot_vals))
         for i, knot in enumerate(knot_vals):
-            index = np.searchsorted(xs, int(knot)) #binary search as xs are sorted
+            # binary search as xs are sorted
+            # np.floor() rounds in the negative direction for both - and +
+            index = np.searchsorted(xs, np.floor(knot))
             # Use data point on knot
             if int(knot) == knot:
                 knot_ys[i] = ys[index]
-            # Used mean between closest left + right data points
+            # Use mean between closest left + right data points
             else:
                 knot_ys[i] = np.mean(ys[index:index+2])
         return knot_ys
