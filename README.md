@@ -96,6 +96,12 @@ model.fit(x, y, plot=True, confidence_interval=0.90)
 
 For more examples, navigate to the [examples.ipynb](examples.ipynb) file in this repository.
 
+## Contributions
+
+We welcome all to contribute their expertise to the Regressio library. If you are new to open source contributions, [this guide](https://opensource.guide/how-to-contribute/) gives some great tips on how to get started.
+
+If you have a complex feature in mind or find a large bug in the code, please create a detailed issue and we will get to work on it!
+
 ## References
 
 - Hyndman, R.J., & Athanasopoulos, G. (2021) Forecasting: principles and practice, 3rd edition, OTexts: Melbourne, Australia. OTexts.com/fpp3. Accessed July 2022. 
