@@ -39,8 +39,12 @@ The available data generators are:
 
 Regressio is supported in Python 3.8+ and requires only NumPy and Matplotlib.
 
-```
+```python
 pip install regressio --upgrade
+```
+or
+```python
+pip install git+https://github.com/brendanartley/Regressio
 ```
 
 ## Example Usage
