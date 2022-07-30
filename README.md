@@ -1,6 +1,21 @@
 <h1 align="center">
-<img src="./imgs/logo.svg" width="300">
-</h1><br>
+<img src="https://github.com/brendanartley/Regressio/blob/main/imgs/logo.svg?raw=true" width="300">
+</h1>
+
+<p align="center">
+    <a href="https://pypi.org/project/regressio/" alt="PYPI">
+        <img src="https://img.shields.io/pypi/v/regressio"/>
+    </a>
+    <a href="https://github.com/brendanartley/Regressio/blob/main/License" alt="MIT License">
+        <img src="https://img.shields.io/github/license/brendanartley/regressio"/>
+    </a>
+    <a href="https://github.com/brendanartley/Regressio/issues" alt="Issues">
+        <img src="https://img.shields.io/github/issues/brendanartley/regressio"/>
+    </a>
+    <a href="https://github.com/brendanartley/Regressio" alt="Stars">
+        <img src="https://img.shields.io/github/stars/brendanartley/regressio?style=social"/>
+    </a>
+</p>
 
 Regressio is a python module for univariate regression, interpolation, and smoothing.
 
@@ -24,7 +39,13 @@ The available data generators are:
 
 Regressio is supported in Python 3.8+ and requires only NumPy and Matplotlib.
 
-`pip install git+https://github.com/brendanartley/Regressio`
+```python
+pip install regressio --upgrade
+```
+or
+```python
+pip install git+https://github.com/brendanartley/Regressio
+```
 
 ## Example Usage
 
@@ -48,7 +69,7 @@ x, y = generate_random_walk(150)
 model = cubic_spline(pieces=15)
 model.fit(x, y, plot=True, confidence_interval=0.99)
 ```
-<img alt="Cubic Spline" src="imgs/cubic_spline.png" width="650">
+<img alt="Cubic Spline" src="https://github.com/brendanartley/Regressio/blob/main/imgs/cubic_spline.png?raw=true" width="650">
 
 Linear regression.
 
@@ -70,7 +91,7 @@ x, y = generate_random_walk(100)
 model = linear_regression(degree=5)
 model.fit(x, y, plot=True, confidence_interval=0.95)
 ```
-<img alt="Linear Regression" src="imgs/linear_regression.png" width="650">
+<img alt="Linear Regression" src="https://github.com/brendanartley/Regressio/blob/main/imgs/linear_regression.png?raw=true" width="650">
 
 Exponential Smoothing.
 
@@ -92,9 +113,15 @@ x, y = generate_isotonic_sample(100)
 model = exponential_smoother(alpha=0.2)
 model.fit(x, y, plot=True, confidence_interval=0.90)
 ```
-<img alt="Exponential Smoother" src="imgs/exponential_smoother.png" width="650">
+<img alt="Exponential Smoother" src="https://github.com/brendanartley/Regressio/blob/main/imgs/exponential_smoother.png?raw=true" width="650">
 
 For more examples, navigate to the [examples.ipynb](examples.ipynb) file in this repository.
+
+## Contributions
+
+We welcome all to contribute their expertise to the Regressio library. If you are new to open source contributions, [this guide](https://opensource.guide/how-to-contribute/) gives some great tips on how to get started.
+
+If you have a complex feature in mind or find a large bug in the code, please create a detailed issue and we will get to work on it.
 
 ## References
 
