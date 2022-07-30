@@ -1,5 +1,5 @@
 <h1 align="center">
-<img src="./imgs/logo.svg" width="300">
+<img src="https://github.com/brendanartley/Regressio/blob/main/imgs/logo.svg?raw=true" width="300">
 </h1>
 
 <p align="center">
@@ -63,7 +63,7 @@ x, y = generate_random_walk(150)
 model = cubic_spline(pieces=15)
 model.fit(x, y, plot=True, confidence_interval=0.99)
 ```
-<img alt="Cubic Spline" src="imgs/cubic_spline.png" width="650">
+<img alt="Cubic Spline" src="https://github.com/brendanartley/Regressio/blob/main/imgs/cubic_spline.png?raw=true" width="650">
 
 Linear regression.
 
@@ -85,7 +85,7 @@ x, y = generate_random_walk(100)
 model = linear_regression(degree=5)
 model.fit(x, y, plot=True, confidence_interval=0.95)
 ```
-<img alt="Linear Regression" src="imgs/linear_regression.png" width="650">
+<img alt="Linear Regression" src="https://github.com/brendanartley/Regressio/blob/main/imgs/linear_regression.png?raw=true" width="650">
 
 Exponential Smoothing.
 
@@ -107,7 +107,7 @@ x, y = generate_isotonic_sample(100)
 model = exponential_smoother(alpha=0.2)
 model.fit(x, y, plot=True, confidence_interval=0.90)
 ```
-<img alt="Exponential Smoother" src="imgs/exponential_smoother.png" width="650">
+<img alt="Exponential Smoother" src="https://github.com/brendanartley/Regressio/blob/main/imgs/exponential_smoother.png?raw=true" width="650">
 
 For more examples, navigate to the [examples.ipynb](examples.ipynb) file in this repository.
 
