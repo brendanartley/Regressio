@@ -1011,7 +1011,7 @@ class exp_moving_average(smoother):
 
     def fit(self, x, y, plot=False, confidence_interval=False):
         '''
-        Given arrays x and y, returns exponentially smoothed y values.
+        Given arrays x and y, computes exponentially smoothed y values.
         '''
         if len(y) <= 2:
             raise ValueError('len(y) must be greater than 2')
@@ -1108,18 +1108,19 @@ class gaussian_kernel(smoother):
         self.fwhm = self.check_fwhm(fwhm)
 
     def fit(self, x, y, plot=False, confidence_interval=False):
-        
+        """
+        Given arrays x and y, computes smoothed y values.
+        """
         # Initiliazing smoothed value array
         self.smoothed_ys = np.zeros(y.shape)
     
-        # Sort array for fwhm calculation
+        # Sort array for kernel + FWHM calculation
         y = y[x.argsort()]
         x = np.sort(x)
 
         # Set FWHM + calculate sigma
         if self.fwhm == None:
             self.fwhm = (x[-1] - x[0]) / 25
-            
         sigma = self.fwhm_to_sigma(self.fwhm)
 
         # Calculating kernel at each point

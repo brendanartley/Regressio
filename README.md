@@ -33,8 +33,8 @@ The available models are:
 There are also functions implemented to generate data samples.
 
 The available data generators are:
-- Random Walk
-- Isotonic Sample
+- Random walk
+- Isotonic sample
 
 ## Installation
 
