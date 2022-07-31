@@ -153,22 +153,33 @@ class Test_natural_cubic_spline:
         model = natural_cubic_spline(pieces=50)
         model.fit(x, y)
 
-class Test_exponential_smoother: 
+class Test_exp_moving_average: 
     def test_zero_alpha(self):
         with pytest.raises(TypeError):
-            model = exponential_smoother(alpha=0)
+            model = exp_moving_average(alpha=0)
     
     def test_negative_alpha(self):
         with pytest.raises(ValueError):
-            model = exponential_smoother(alpha=-1.2)
+            model = exp_moving_average(alpha=-1.2)
 
     def test_data_too_small(self):
         with pytest.raises(ValueError):
             x, y = generate_random_walk(2)
-            model = exponential_smoother()
+            model = exp_moving_average()
             model.fit(x,y)
 
     def test_fit_model(self):
         x, y = generate_random_walk(100)
-        model = exponential_smoother()
+        model = exp_moving_average()
         model.fit(x, y)
+
+class Test_gaussian_kernel: 
+    def test_model_fit(self):
+        x, y = generate_random_walk(100)
+        model = gaussian_kernel()
+        model.fit(x, y)
+
+    def test_incorrect_fwhm(self):
+        with pytest.raises(TypeError):
+            model = gaussian_kernel(fwhm='5')
+            

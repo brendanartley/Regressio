@@ -967,8 +967,8 @@ class natural_cubic_spline(cubic_spline):
     def line(x, slope, intercept):
         return (slope*x) + intercept
 
-class exponential_smoother(smoother):
-    """Exponential smoothing model.
+class exp_moving_average(smoother):
+    """Exponential moving average.
 
     An iterative model that make predictions based on the weighted moving average of past 
     predictions with exponentially decreasing weight.
@@ -993,10 +993,10 @@ class exponential_smoother(smoother):
 
     Example
     ---------
-    >>> from regressio.models import exponential_smoother
+    >>> from regressio.models import exp_moving_average
     >>> from regressio.datagen import generate_random_walk
     >>> x, y = generate_random_walk(200)
-    >>> model = exponential_smoother(alpha=0.1)
+    >>> model = exp_moving_average(alpha=0.1)
     >>> model.fit(x, y, plot=True, confidence_interval=0.99)
 
     Reference
@@ -1064,6 +1064,130 @@ class exponential_smoother(smoother):
         if alpha < 0 or alpha > 1:
             raise ValueError('alpha must be between 0 and 1')
         return alpha
+
+class gaussian_kernel(smoother):
+    """Gaussian kernel function.
+
+    Kernel smoothing: For each value in a given array, each smoothed value is 
+    calculated as some function applied to the original value and its surrounding points. 
+    
+    For the gaussian kernel, we center the gaussian distribution around each point and
+    take the sum of the weighted values over all the data. The smoothness of the function is
+    tuned by the full width half maximum parameter. For a complete description of the kernel 
+    function see the reference below.
+
+    Args
+    ---------
+        fwhm: width of kernel at 1/2 max height of the gaussian distribution
+
+    Attributes
+    ---------
+        fwhm: width of kernel at 1/2 max height of the gaussian distribution
+        + attributes from smoother class
+
+    Raises
+    ---------
+        TypeError: if fwhm is not a float or int
+
+    Example
+    ---------
+    >>> from regressio.models import gaussian_kernel
+    >>> from regressio.datagen import generate_random_walk
+    >>> x, y = generate_random_walk(100)
+    >>> model = gaussian_kernel(fwhm=4)
+    >>> model.fit(x, y, plot=True, confidence_interval=0.90)
+
+    Reference
+    ----------
+    Brett, M. (2014, October 26). An introduction to smoothing. 
+    Tutorials on imaging, computing and mathematics. matthew-brett.github.io/teaching, 
+    Accessed July 2022.
+    """
+    def __init__(self, fwhm=None):
+        smoother.__init__(self)
+        self.fwhm = self.check_fwhm(fwhm)
+
+    def fit(self, x, y, plot=False, confidence_interval=False):
+        
+        # Initiliazing smoothed value array
+        self.smoothed_ys = np.zeros(y.shape)
+    
+        # Sort array for fwhm calculation
+        y = y[x.argsort()]
+        x = np.sort(x)
+
+        # Set FWHM + calculate sigma
+        if self.fwhm == None:
+            self.fwhm = (x[-1] - x[0]) / 25
+            
+        sigma = self.fwhm_to_sigma(self.fwhm)
+
+        # Calculating kernel at each point
+        for i, x_position in enumerate(x):
+            kernel = self.kernel_at_position(x, x_position, sigma)
+            kernel = kernel / sum(kernel)
+            self.smoothed_ys[i] = sum(y * kernel)
+        
+        # Storing residuals
+        self.residuals = y - self.smoothed_ys
+
+        # Plot model
+        if plot:
+            self.plot_model(x, y, confidence_interval)
+
+    def plot_model(self, x, y, confidence_interval=False):
+        '''
+        Plots the models hypothetical predictions, MSE, and true data points.
+        '''
+        # Plot model + data points
+        plt.plot(x, self.smoothed_ys, color='tab:orange')
+        plt.scatter(x, y)
+
+        # MSE + title
+        MSE = np.mean((self.residuals) ** 2)
+        plt.title("{}, FWHM: {}, MSE: {:.4f}".format(type(self).__name__, self.fwhm, MSE))
+
+        # Optional: Plotting confidence interval
+        if confidence_interval:
+            band_size = self.get_confidence_interval(confidence_interval)
+            plt.fill_between(x.flatten(), self.smoothed_ys - band_size, self.smoothed_ys + band_size, color='tab:blue', alpha=0.2)
+            plt.title("{}, FWHM: {}, MSE: {:.4f}, Confidence Interval: {:.8g}%".format(type(self).__name__, self.fwhm, MSE, confidence_interval*100))
+        plt.show()
+
+    def fwhm_to_sigma(self, fwhm):
+        """
+        The FWHM is the full width of the kernel at half the maximum height 
+        of the Gaussian function. For a Gaussian function with standard deviation 
+        1, the maximum height is ~0.4. The width of the kernel at 0.2 to 0.2 (on the Y axis) 
+        is the FWHM.
+
+        This function takes in a FWHM value and returns sigma (a standard deviation).
+
+        Formula: https://en.wikipedia.org/wiki/Full_width_at_half_maximum
+        """
+        return fwhm / (2 * np.sqrt(2 * np.log(2)))
+
+    def kernel_at_position(self, x, x_position, sigma):
+        """
+        At a given index denoted x_position, returns the kernel 
+        weights over array x.
+
+        Formula: https://en.wikipedia.org/wiki/Gaussian_filter
+        """
+        kernel = np.exp(-(x - x_position) ** 2 / (2 * sigma ** 2))
+        kernel = kernel / sum(kernel)
+        return kernel
+
+    @staticmethod
+    def check_fwhm(fwhm):
+        '''
+        Validates fwhm input.
+        '''
+        if fwhm == None:
+            return None
+        if type(fwhm) != float and type(fwhm) != int:
+            raise TypeError('fwhm must be a float or int')
+        return fwhm
 
 if __name__ == '__main__':
     main()
