@@ -30,6 +30,7 @@ The available models are:
 - Exponential moving average
 - Gaussian kernel
 - KNN kernel
+- Weighted average kernel
 
 There are also functions implemented to generate data samples.
 

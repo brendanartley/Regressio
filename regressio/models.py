@@ -1069,7 +1069,7 @@ class exp_moving_average(smoother):
         return alpha
 
 class gaussian_kernel(smoother):
-    """Gaussian kernel function.
+    """Gaussian kernel.
 
     Kernel smoothing: For each value in a given array, each smoothed value is 
     calculated as some function applied to the original value and its surrounding points. 
@@ -1198,6 +1198,38 @@ class gaussian_kernel(smoother):
         return fwhm
 
 class knn_kernel(smoother):
+    """KNN kernel. 
+    
+    The KNN kernel is applied to each data point. The smoothed value is
+    the average of the N nearest points. The smoothness of the function is
+    determined by the size of N. The larger N is, the smoother the function.
+
+    If the boundary of the training data is reached before we get to N
+    data points, then we compute the smoothed values with less than N
+    points. This results in a smooth fitting line.
+
+    Args
+    ---------
+        n: the number of nearest points used in KNN calculation
+
+    Attributes
+    ---------
+        n: the number of nearest points used in KNN calculation
+        + attributes from smoother class
+
+    Raises
+    ---------
+        ValueError: if n is <= 0 | n >= len(x)
+        TypeError: if n is not an integer
+
+    Example
+    ---------
+    >>> from regressio.models import knn_kernel
+    >>> from regressio.datagen import generate_random_walk
+    >>> x, y = generate_random_walk(100)
+    >>> model = knn_kernel(n=6)
+    >>> model.fit(x, y, plot=True, confidence_interval=0.90)
+    """
     def __init__(self, n):
         smoother.__init__(self)
         self.n = self.check_n_input(n)
@@ -1247,7 +1279,7 @@ class knn_kernel(smoother):
         """
         Calculates KNN for all points in array y given x and y.
         """
-        smoothed_values = np.zeros(len(x))
+        smoothed_values = np.zeros(len(y))
 
         # Calculate kernel for every x_value
         for i, x_value in enumerate(x):
@@ -1255,8 +1287,9 @@ class knn_kernel(smoother):
             closest_points = [0] * self.n
             pi = 0
             li = np.searchsorted(x, x_value)
+            broke = False
 
-            # Set starting point in array as its position
+            # Set starting point for li, ri in array
             if li == 0:
                 ri = 1
             elif li == len(x) - 1:
@@ -1281,10 +1314,14 @@ class knn_kernel(smoother):
                 # If border reached, return current closest values,
                 # otherwise smoothed values at edges are horizontal lines
                 else:
+                    broke = True
                     break
                 pi+=1
 
-            smoothed_values[i] = np.mean(closest_points[:j+1])
+            if broke:
+                smoothed_values[i] = np.mean(closest_points[:j])
+            else:
+                smoothed_values[i] = np.mean(closest_points[:j+1])
 
         return smoothed_values
 
@@ -1298,6 +1335,168 @@ class knn_kernel(smoother):
         if n < 1:
             raise ValueError('n must be >= 1')
         return n
+
+class weighted_average_kernel(smoother):
+    """Weighted average kernel. 
+    
+    The Weighted average kernel is applied to each data point. The smoothed value is
+    the weighted average of points within a specified distance. The smoothness of the 
+    function is determined by the size of the distance. The larger the distance, the
+    smoother the line.
+
+    Args
+    ---------
+        dist: the max distance for points to be in order to be in kernel
+
+    Attributes
+    ---------
+        dist: the max distance for points to be in order to be in kernel
+        + attributes from smoother class
+
+    Raises
+    ---------
+        ValueError: if dist is <= 0
+        TypeError: if dist is not an integer
+
+    Example
+    ---------
+    >>> from regressio.models import weighted_average_kernel
+    >>> from regressio.datagen import generate_random_walk
+    >>> x, y = generate_random_walk(100)
+    >>> model = weighted_average_kernel(dist=6)
+    >>> model.fit(x, y, plot=True, confidence_interval=0.90)
+    """
+    def __init__(self, dist):
+        smoother.__init__(self)
+        self.dist = self.check_dist_input(dist)
+
+    def fit(self, x, y, plot=False, confidence_interval=False):
+        """
+        Given arrays x and y, computes smoothed y values.
+        """
+        # Validate x and y input
+        if len(x) != len(y):
+            raise ValueError('x and y must be of the same length')
+
+        # Checking that self.dist is not too small
+        largest_dist = abs(x[1] - x[0])
+        for i in range(len(x) - 1):
+            if abs(x[i+1] - x[i]) > largest_dist:
+                largest_dist = abs(x[i+1] - x[i])
+
+        if self.dist < largest_dist:
+            raise ValueError('dist must be >= {} for this dataset'.format(largest_dist))
+    
+        # Sort array for kernel calculation
+        y = y[x.argsort()]
+        x = np.sort(x)
+
+        # Calculate smoothed ys + storing residuals
+        self.smoothed_ys = self.find_close_points(x, y)
+        self.residuals = y - self.smoothed_ys
+
+        # Plot model
+        if plot:
+            self.plot_model(x, y, confidence_interval)
+
+    def plot_model(self, x, y, confidence_interval=False):
+        '''
+        Plots the models hypothetical predictions, MSE, and true data points.
+        '''
+        # Plot model + data points
+        plt.plot(x, self.smoothed_ys, color='tab:orange')
+        plt.scatter(x, y)
+
+        # MSE + title
+        MSE = np.mean((self.residuals) ** 2)
+        plt.title("{}, dist: {}, MSE: {:.4f}".format(type(self).__name__, self.dist, MSE))
+
+        # Optional Param: Plot confidence interval
+        if confidence_interval:
+            band_size = self.get_confidence_interval(confidence_interval)
+            plt.fill_between(x.flatten(), self.smoothed_ys - band_size, self.smoothed_ys + band_size, color='tab:blue', alpha=0.2)
+            plt.title("{}, dist: {}, MSE: {:.4f}, Confidence Interval: {:.8g}%".format(type(self).__name__, self.dist, MSE, confidence_interval*100))
+        plt.show()
+
+    def find_close_points(self, x, y):
+        """
+        Calculates weighted average for all points in array y given x and y.
+        """
+
+        # Smoothed values, and weighted closed points storage
+        smoothed_values = np.zeros(len(x))
+        closest_points = np.zeros(len(x))
+        cp_weights = np.zeros(len(x))
+
+        # Calculate kernel for every x_value
+        for i, x_value in enumerate(x):
+            pi = 0
+            li = np.searchsorted(x, x_value)
+            ri = li
+            broke = False
+            
+            # Set starting point for li, ri in array
+            if li == 0:
+                ri = 1
+            elif li == len(x) - 1:
+                ri = li
+                li -= 1
+            else:
+                if abs(x_value - x[li]) < abs(x_value - x[li+1]):
+                    ri = li
+                    li -= 1
+                else:
+                    ri = li + 1
+            
+            # Find all points within +- dist of point (similar to merge sort method)
+            for j in range(len(x)):
+                if li >= 0 and ri < len(x):
+                    if min(abs(x_value - x[li]), abs(x_value - x[ri])) <= self.dist:
+                        if abs(x_value - x[li]) < abs(x_value - x[ri]):
+                            closest_points[pi] = y[li]
+                            cp_weights[pi] = abs(x_value - x[li])
+                            li -= 1
+                        else:
+                            closest_points[pi] = y[ri]
+                            cp_weights[pi] = abs(x_value - x[ri])
+                            ri += 1
+                    else:
+                        broke = True
+                        break
+                elif li >= 0 and abs(x_value - x[li]) <= self.dist:
+                    closest_points[pi] = y[li]
+                    cp_weights[pi] = abs(x_value - x[li])
+                    li -= 1
+                elif ri < len(x) and abs(x_value - x[ri]) <= self.dist:
+                    closest_points[pi] = y[ri]
+                    cp_weights[pi] = abs(x_value - x[ri])
+                    ri += 1
+                else:
+                    broke = True
+                    break
+
+                pi+=1
+
+            # Workaround to solve division by 0 error
+            cp_weights[:j] = np.reciprocal(cp_weights[:j]+1)
+            
+            if broke:
+                smoothed_values[i] = np.average(closest_points[:j], weights=cp_weights[:j])
+            else:
+                smoothed_values[i] = np.average(closest_points[:j+1], weights=cp_weights[:j+1])
+
+        return smoothed_values
+
+    @staticmethod
+    def check_dist_input(dist):
+        '''
+        Validate dist parameter.
+        '''
+        if type(dist) != int:
+            raise TypeError('dist must be an integer')
+        if dist <= 0:
+            raise ValueError('dist must be >= 0')
+        return dist
 
 if __name__ == '__main__':
     main()
