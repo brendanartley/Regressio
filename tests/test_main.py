@@ -182,4 +182,17 @@ class Test_gaussian_kernel:
     def test_incorrect_fwhm(self):
         with pytest.raises(TypeError):
             model = gaussian_kernel(fwhm='5')
-            
+
+class Test_knn_kernel: 
+    def test_incorrect_type_n(self):
+        with pytest.raises(TypeError):
+            model = knn_kernel(n='5')
+    
+    def test_negative_n(self):
+        with pytest.raises(ValueError):
+            model = knn_kernel(n=-5)
+
+    def test_model_fit(self):
+        x, y = generate_random_walk(100)
+        model = knn_kernel(5)
+        model.fit(x, y)
