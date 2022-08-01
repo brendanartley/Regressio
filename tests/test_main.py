@@ -196,3 +196,17 @@ class Test_knn_kernel:
         x, y = generate_random_walk(100)
         model = knn_kernel(5)
         model.fit(x, y)
+
+class Test_weighted_average_kernel: 
+    def test_incorrect_type_n(self):
+        with pytest.raises(TypeError):
+            model = weighted_average_kernel(dist='5')
+    
+    def test_negative_n(self):
+        with pytest.raises(ValueError):
+            model = weighted_average_kernel(dist=-5)
+
+    def test_model_fit(self):
+        x, y = generate_random_walk(100)
+        model = weighted_average_kernel(dist=5)
+        model.fit(x, y)

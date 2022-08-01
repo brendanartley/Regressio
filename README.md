@@ -28,8 +28,7 @@ The available models are:
 - Cubic spline
 - Natural cubic spline
 - Exponential moving average
-- Gaussian kernel
-- KNN kernel
+- Kernel functions (Gaussian, KNN, Weighted average)
 
 There are also functions implemented to generate data samples.
 
