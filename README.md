@@ -20,20 +20,22 @@
 Regressio is a python module for univariate regression, interpolation, and smoothing.
 
 The available models are:
-- Linear Regression
-- Ridge Regression
-- Linear Spline
-- Isotonic Regression
-- Bin Regression
-- Cubic Spline
-- Natural Cubic Spline
-- Exponential Smoothing
+- Linear regression
+- Ridge regression
+- Linear spline
+- Isotonic regression
+- Bin regression
+- Cubic spline
+- Natural cubic spline
+- Exponential moving average
+- Gaussian kernel
+- KNN kernel
 
 There are also functions implemented to generate data samples.
 
 The available data generators are:
-- Random Walk
-- Isotonic Sample
+- Random walk
+- Isotonic sample
 
 ## Installation
 
@@ -69,7 +71,7 @@ x, y = generate_random_walk(150)
 model = cubic_spline(pieces=15)
 model.fit(x, y, plot=True, confidence_interval=0.99)
 ```
-<img alt="Cubic Spline" src="https://github.com/brendanartley/Regressio/blob/main/imgs/cubic_spline.png?raw=true" width="650">
+<img alt="Cubic spline" src="https://github.com/brendanartley/Regressio/blob/main/imgs/cubic_spline.png?raw=true" width="650">
 
 Linear regression.
 
@@ -91,13 +93,13 @@ x, y = generate_random_walk(100)
 model = linear_regression(degree=5)
 model.fit(x, y, plot=True, confidence_interval=0.95)
 ```
-<img alt="Linear Regression" src="https://github.com/brendanartley/Regressio/blob/main/imgs/linear_regression.png?raw=true" width="650">
+<img alt="Linear regression" src="https://github.com/brendanartley/Regressio/blob/main/imgs/linear_regression.png?raw=true" width="650">
 
-Exponential Smoothing.
+Exponential moving average.
 
 ```python
 # Import modules + classes
-from regressio.models import isotonic_regression
+from regressio.models import exp_moving_average
 from regressio.datagen import generate_isotonic_sample
 import numpy as np
 import matplotlib.pyplot as plt
@@ -110,10 +112,10 @@ np.random.seed(6)
 x, y = generate_isotonic_sample(100)
 
 # Fit model and plot result
-model = exponential_smoother(alpha=0.2)
+model = exp_moving_average(alpha=0.2)
 model.fit(x, y, plot=True, confidence_interval=0.90)
 ```
-<img alt="Exponential Smoother" src="https://github.com/brendanartley/Regressio/blob/main/imgs/exponential_smoother.png?raw=true" width="650">
+<img alt="Exponential moving average" src="https://github.com/brendanartley/Regressio/blob/main/imgs/exponential_smoother.png?raw=true" width="650">
 
 For more examples, navigate to the [examples.ipynb](examples.ipynb) file in this repository.
 
@@ -130,3 +132,5 @@ If you have a complex feature in mind or find a large bug in the code, please cr
 - Kong, Qingkai, et al. Python Programming and Numerical Methods: A Guide for Engineers and Scientists. Academic Press, an Imprint of Elsevier, pythonnumericalmethods.berkeley.edu, Accessed July 2022. 
 
 - Li, Bao, (2022). Stat 508: Applied Data Mining, Statistical Learning: Stat Online. PennState: Statistics Online Courses, online.stat.psu.edu/stat508, Accessed July 2022.
+
+- Brett, M. (2014, October 26). An introduction to smoothing. Tutorials on imaging, computing and mathematics. matthew-brett.github.io/teaching, Accessed July 2022.

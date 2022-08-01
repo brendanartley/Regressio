@@ -109,20 +109,20 @@ class linear_regression(smoother):
         '''
         Given input arrays x and y. Fits the model.
         '''
-        # Validate input data
+        # Validate x and y input
         if len(x) != len(y):
             raise ValueError('x and y must be of the same length')
         elif len(x) <= 1:
             raise ValueError('len(x) must be > 1')
 
-        # Stores min, max of x for plot_polynomial function
+        # Store min, max of x for plot_polynomial function
         self.range = [x.min(), x.max()]
 
         # Calculate ordinary least squares
         x = x.reshape(-1, 1)
         MSE = self.OLS(x, y)
 
-        # Storing residuals and smoothed values
+        # Store residuals and smoothed values
         self.smoothed_ys = self.predict(x)
         self.residuals = y - self.smoothed_ys
 
@@ -139,7 +139,7 @@ class linear_regression(smoother):
         return preds
 
     def OLS(self, x, y):
-        # Constructing features 1, x^1, x^2 .. x^n
+        # Construct features 1, x^1, x^2 .. x^n
         x = x.reshape(-1, 1)
         x_features = np.hstack([(x**i) for i in range(self.degree+1)])
 
@@ -148,7 +148,7 @@ class linear_regression(smoother):
         xTx_inv = np.linalg.inv(xTx)
         ws = xTx_inv.dot(x_features.T.dot(y))
 
-        # Storing weights + returning MSE
+        # Store weights + return MSE
         self.ws = ws
         MSE = self.MSE(x_features, y)
         return MSE
@@ -163,7 +163,7 @@ class linear_regression(smoother):
 
     def plot_model(self, x, y, MSE, confidence_interval=False):
         '''
-        Plots the models hypothetical predictions, MSE, and true data points.
+        Plot the models hypothetical predictions, MSE, and true data points.
         '''
         # Plot hypothetical model values
         modelx = np.linspace(self.range[0], self.range[1], 1000).reshape([-1, 1])
@@ -177,7 +177,7 @@ class linear_regression(smoother):
         # Title + MSE
         plt.title("{}, Degree: {}, MSE: {:.4f}".format(type(self).__name__, self.degree, MSE))
 
-        # Optional: Plotting confidence interval
+        # Optional: Plot confidence interval
         if confidence_interval:
             band_size = self.get_confidence_interval(confidence_interval)
             plt.fill_between(modelx.flatten(), modely - band_size, modely + band_size, color='tab:blue', alpha=0.2)
@@ -188,7 +188,7 @@ class linear_regression(smoother):
     @staticmethod
     def check_degree_input(degree):
         '''
-        Validates degree input.
+        Validate degree input.
         '''
         if type(degree) != int:
             raise TypeError('Degree must be an integer')
@@ -238,11 +238,11 @@ class ridge_regression(linear_regression):
         self.alpha = self.check_alpha_input(alpha)
 
     def OLS(self, x, y):
-        # Constructing features 1, x^1, x^2 .. x^n
+        # Construct features 1, x^1, x^2 .. x^n
         x = x.reshape(-1, 1)
         x_features = np.hstack([(x**i) for i in range(self.degree+1)])
         
-        # Constructing L2 penalty matrix (Ridge)
+        # Construct L2 penalty matrix (Ridge)
         A = np.identity(self.degree+1) * self.alpha
         A[0,0] = 0
 
@@ -251,7 +251,7 @@ class ridge_regression(linear_regression):
         xTx_inv = np.linalg.inv(xTx + A)
         ws = xTx_inv.dot(x_features.T.dot(y))
 
-        # Storing weights + returning MSE
+        # Store weights + return MSE
         self.ws = ws
         MSE = self.MSE(x_features, y)
         return MSE
@@ -259,7 +259,7 @@ class ridge_regression(linear_regression):
     @staticmethod
     def check_alpha_input(alpha):
         '''
-        Validates alpha input.
+        Validate alpha input.
         '''
         if type(alpha) not in [float, int]:
             raise TypeError('alpha must be an float or int')
@@ -339,7 +339,7 @@ class linear_spline(smoother):
                 self.last_binvals[i] = ws[0]
                 self.slopes[i] = ws[1]
 
-                # Calculating last value in bin
+                # Calculate last value in bin
                 last_binval = self.line(self.knot_vals[1] - self.knot_vals[0], ws[1], ws[0])
                 self.last_binvals[i+1] = last_binval
                 
@@ -354,7 +354,7 @@ class linear_spline(smoother):
 
             ysum = self.last_binvals[i+1]
 
-        # Storing residuals and smoothed values
+        # Store residuals and smoothed values
         self.smoothed_ys = self.predict(x)
         self.residuals = y - self.smoothed_ys
 
@@ -367,7 +367,7 @@ class linear_spline(smoother):
         Given a 1-dimenional numpy array, make predictions.
         '''
         preds = np.zeros(len(x))
-        # iterating every x in input array
+        # iterate over every x in input array
         for i in range(len(x)):
             broke = False
             x_raw = x[i] - self.knot_vals[0]
@@ -375,7 +375,7 @@ class linear_spline(smoother):
             if x[i] <= self.knot_vals[0]:
                 preds[i] = self.last_binvals[0]
             else:
-                # iterating over every bin  
+                # iterate over every bin  
                 for j in range(len(self.knot_vals)-1):
                     if x[i] >= self.knot_vals[j] and x[i] < self.knot_vals[j+1]:
                         preds[i] = self.line(x_raw, self.slopes[j], self.last_binvals[j])
@@ -393,7 +393,7 @@ class linear_spline(smoother):
         '''
         Modified OLS. Intercept is constrained for all bins except for the first.
         '''
-        # Creating Features
+        # Create Features
         x = x.reshape(-1,1)
         if first:
             x = np.hstack([(x**i) for i in range(2)]) # include slope if first line
@@ -416,7 +416,7 @@ class linear_spline(smoother):
         MSE = np.mean((self.residuals) ** 2)
         plt.title("{}, Knots: {}, MSE: {:.8f}".format(type(self).__name__, self.knots, MSE))
 
-        # Optional: Plotting confidence interval
+        # Optional: Plot confidence interval
         if confidence_interval:
             band_size = self.get_confidence_interval(confidence_interval)
             plt.fill_between(x.flatten(), self.smoothed_ys - band_size, self.smoothed_ys + band_size, color='tab:blue', alpha=0.2)
@@ -429,13 +429,13 @@ class linear_spline(smoother):
         '''
         Checks each bin to validate before OLS calculation.
         '''
-        # Calculating slope + intercept in 1st segment so need >2 xs
+        # Will calculate slope + intercept in 1st segment so need >2 xs
         if i == 0 and len(bin_x) < 2:
             raise ValueError('Need at least 2 data points in the 1st segment.')
-        # Need >1 x in all other bins
+        # Need len(bin) > 1 in all other bins
         if len(bin_x) < 1:
             raise ValueError('Need at least 1 data point in every segment but the 1st.')
-        # Need >0 non-zero values in matrix
+        # Need a non-zero matrix
         if np.sum(bin_x) == 0:
             raise ValueError('Need at least 1 non 0 value in bin xs')
             
@@ -523,12 +523,12 @@ class isotonic_regression(linear_spline):
             self.last_binvals[i+1] = last_binval
             ysum += last_binval
         
-        # Storing residuals and smoothed values
+        # Store residuals and smoothed values
         self.smoothed_ys = self.predict(x)
         self.residuals = y - self.smoothed_ys
     
+        # Plot fit model
         if plot:
-            # plot fit model
             self.plot_model(x, y, confidence_interval)
 
     @staticmethod
@@ -577,14 +577,14 @@ class bin_regression(smoother):
     def __init__(self, bins):
         smoother.__init__(self)
         self.bins = self.check_bins_input(bins) # number of bins
-        self.bin_ys = np.zeros(bins) # stores each bin y value
+        self.bin_ys = np.zeros(bins) # store each bin y value
         self.bin_vals = None #set bin values model.fit()
 
     def fit(self, x, y, plot=False, confidence_interval=False):
         '''
         Given input arrays x and y. Fits the model.
         '''
-        # check inputs are the same length
+        # Validate x and y input
         if len(x) != len(y):
             raise ValueError('x and y must be of the same length')
 
@@ -596,7 +596,7 @@ class bin_regression(smoother):
             self.check_bin(i, bin_y)
             self.bin_ys[i] = np.mean(bin_y)
 
-        # Storing residuals and smoothed values
+        # Store residuals and smoothed values
         self.smoothed_ys = self.predict(x)
         self.residuals = y - self.smoothed_ys
     
@@ -609,13 +609,13 @@ class bin_regression(smoother):
         Given a 1-dimenional numpy array, make predictions.
         '''
         preds = np.zeros(len(x))
-        # iterating every x in input array
+        # iterate over every x in input array
         for i in range(len(x)):
             broke = False
             if x[i] <= self.bin_vals[0]:
                 preds[i] = self.bin_ys[0]
             else:
-                # iterating until in correct bin
+                # iterate until in correct bin
                 for j in range(len(self.bin_vals)-1):
                     if x[i] >= self.bin_vals[j] and x[i] < self.bin_vals[j+1]:
                         preds[i] = self.bin_ys[j]
@@ -627,7 +627,7 @@ class bin_regression(smoother):
         
     def plot_model(self, x, y, confidence_interval=False):
         '''
-        Plots the models hypothetical predictions, MSE, and true data points.
+        Plot the models hypothetical predictions, MSE, and true data points.
         '''
         # Plot each bin (left + right limit) + data points
         modelx = np.repeat(self.bin_vals, 2)[1:-1]
@@ -639,7 +639,7 @@ class bin_regression(smoother):
         MSE = np.mean((self.residuals) ** 2)
         plt.title("{}, Bins: {}, MSE: {:.8f}".format(type(self).__name__, self.bins, MSE))
 
-        # Optional: Plotting confidence interval
+        # Optional: Plot confidence interval
         if confidence_interval:
             band_size = self.get_confidence_interval(confidence_interval)
             plt.fill_between(modelx, modely - band_size, modely + band_size, color='tab:blue', alpha=0.2)
@@ -712,7 +712,7 @@ class cubic_spline(smoother):
         self.pieces = self.check_input_pieces(pieces)
         self.knot_xvals = None
         self.knot_yvals = None
-        self.ws = None # stores weights for each piecewise polynomial
+        self.ws = None # store weights for each piecewise polynomial
 
     def fit(self, x, y, plot=False, confidence_interval=False):
         '''
@@ -734,7 +734,7 @@ class cubic_spline(smoother):
         # Calculate weights of each piecewise function
         self.ws = self.calc_piecewise_weights(self.knot_xvals, self.knot_yvals)
 
-        # Storing residuals and smoothed values
+        # Store residuals and smoothed values
         self.smoothed_ys = self.predict(x)
         self.residuals = y - self.smoothed_ys
 
@@ -791,7 +791,7 @@ class cubic_spline(smoother):
         '''
         Given a set of x values, makes predictions.
         '''
-        # Array for predictions (assigning is faster than append)
+        # Array for predictions (assign is faster than append)
         ys = np.zeros(len(xs), dtype=np.float64) # use float for precision
 
         ws_pos = 0
@@ -801,7 +801,7 @@ class cubic_spline(smoother):
             if i == 0:
                 ys_to_add = self.polynomial(xs[xs<=self.knot_xvals[i]], self.ws[ws_pos:ws_pos+4][::-1])
                 ys[:len(ys_to_add)] = ys_to_add
-            # all other pieces
+            # All other pieces
             else:
                 ys_to_add = self.polynomial(xs[np.logical_and(xs>self.knot_xvals[i-1], xs<=self.knot_xvals[i])], self.ws[ws_pos:ws_pos+4][::-1])
                 ws_pos+=4
@@ -831,7 +831,7 @@ class cubic_spline(smoother):
         MSE = np.mean(self.residuals ** 2)
         plt.title("{}, Pieces: {}, MSE: {:.8f}".format(type(self).__name__, self.pieces, MSE))
         
-        # Optional: Plotting confidence interval
+        # Optional: Plot confidence interval
         if confidence_interval:
             band_size = self.get_confidence_interval(confidence_interval)
             plt.fill_between(modelx, modely - band_size, modely + band_size, color='tab:blue', alpha=0.2)
@@ -937,7 +937,7 @@ class natural_cubic_spline(cubic_spline):
                 p1 = self.polynomial(self.knot_xvals[i:i+1], self.ws[ws_pos:ws_pos+4][::-1])
                 p2 = self.polynomial(self.knot_xvals[i:i+1] + 0.01, self.ws[ws_pos:ws_pos+4][::-1])
                 slope = (p2 - p1) / 0.01
-                # Calculating values with a shift based on starting knot xvalue
+                # Calculate values with a shift based on starting knot xvalue
                 ys_to_add = self.line(xs[xs<=self.knot_xvals[i]] - self.knot_xvals[0], slope, p2)
                 ys[:len(ys_to_add)] = ys_to_add
 
@@ -946,7 +946,7 @@ class natural_cubic_spline(cubic_spline):
                 ys_to_add = self.polynomial(xs[np.logical_and(xs>self.knot_xvals[i-1], xs<=self.knot_xvals[i])], self.ws[ws_pos:ws_pos+4][::-1])
                 ws_pos+=4
             
-            # inserting predictions to array, moving pointer
+            # insert predictions to array, moving pointer
             ys[insert_pos:insert_pos + len(ys_to_add)] = ys_to_add
             insert_pos += len(ys_to_add)
 
@@ -959,7 +959,7 @@ class natural_cubic_spline(cubic_spline):
         slope = (p2 - p1) / 0.01
         ys_to_add = self.line(xs[xs>self.knot_xvals[i]] - self.knot_xvals[-1], slope, p2)
         
-        # inserting points past the endpoint to predictions array
+        # insert points past the endpoint to predictions array
         ys[insert_pos:insert_pos + len(ys_to_add)] = ys_to_add
         return ys
     
@@ -967,8 +967,8 @@ class natural_cubic_spline(cubic_spline):
     def line(x, slope, intercept):
         return (slope*x) + intercept
 
-class exponential_smoother(smoother):
-    """Exponential smoothing model.
+class exp_moving_average(smoother):
+    """Exponential moving average.
 
     An iterative model that make predictions based on the weighted moving average of past 
     predictions with exponentially decreasing weight.
@@ -993,10 +993,10 @@ class exponential_smoother(smoother):
 
     Example
     ---------
-    >>> from regressio.models import exponential_smoother
+    >>> from regressio.models import exp_moving_average
     >>> from regressio.datagen import generate_random_walk
     >>> x, y = generate_random_walk(200)
-    >>> model = exponential_smoother(alpha=0.1)
+    >>> model = exp_moving_average(alpha=0.1)
     >>> model.fit(x, y, plot=True, confidence_interval=0.99)
 
     Reference
@@ -1011,20 +1011,23 @@ class exponential_smoother(smoother):
 
     def fit(self, x, y, plot=False, confidence_interval=False):
         '''
-        Given arrays x and y, returns exponentially smoothed y values.
+        Given arrays x and y, computes exponentially smoothed y values.
         '''
+        # Validate x and y input
+        if len(x) != len(y):
+            raise ValueError('x and y must be of the same length')
         if len(y) <= 2:
             raise ValueError('len(y) must be greater than 2')
         
-        # Array for storing smoothed values
+        # Array for smoothed values
         smoothed_ys = np.zeros_like(y)
-        smoothed_ys[0] = np.mean(y[:10]) # Initializing initial value using Mean
+        smoothed_ys[0] = np.mean(y[:10]) # Initialize initial value using Mean
 
-        # Iterating y values
+        # Iterate over y values
         for i in range(1, len(y)):
             smoothed_ys[i] = self.alpha*y[i-1] + (1-self.alpha)*smoothed_ys[i-1]
 
-        # Storing residuals and smoothed values
+        # Store residuals and smoothed values
         self.smoothed_ys = smoothed_ys
         self.residuals = y - smoothed_ys
 
@@ -1046,7 +1049,7 @@ class exponential_smoother(smoother):
         MSE = np.mean(self.residuals ** 2)
         plt.title("{}, MSE: {:.8f}".format(type(self).__name__, MSE))
         
-        # Optional confidence interval plot
+        # Optional param: plot confidence interval
         if confidence_interval:
             band_size = self.get_confidence_interval(confidence_interval)
             plt.fill_between(x, self.smoothed_ys - band_size, self.smoothed_ys + band_size, color='tab:blue', alpha=0.2)
@@ -1057,13 +1060,244 @@ class exponential_smoother(smoother):
     @staticmethod
     def check_alpha(alpha):
         '''
-        Validates alpha input.
+        Validate alpha input.
         '''
         if type(alpha) != float:
             raise TypeError('alpha must be a float')
         if alpha < 0 or alpha > 1:
             raise ValueError('alpha must be between 0 and 1')
         return alpha
+
+class gaussian_kernel(smoother):
+    """Gaussian kernel function.
+
+    Kernel smoothing: For each value in a given array, each smoothed value is 
+    calculated as some function applied to the original value and its surrounding points. 
+    
+    For the gaussian kernel, we center the gaussian distribution around each point and
+    take the sum of the weighted values over all the data. The smoothness of the function is
+    tuned by the full width half maximum parameter. For a complete description of the kernel 
+    function see the reference below.
+
+    Args
+    ---------
+        fwhm: width of kernel at 1/2 max height of the gaussian distribution
+
+    Attributes
+    ---------
+        fwhm: width of kernel at 1/2 max height of the gaussian distribution
+        + attributes from smoother class
+
+    Raises
+    ---------
+        TypeError: if fwhm is not a float or int
+
+    Example
+    ---------
+    >>> from regressio.models import gaussian_kernel
+    >>> from regressio.datagen import generate_random_walk
+    >>> x, y = generate_random_walk(100)
+    >>> model = gaussian_kernel(fwhm=4)
+    >>> model.fit(x, y, plot=True, confidence_interval=0.90)
+
+    Reference
+    ----------
+    Brett, M. (2014, October 26). An introduction to smoothing. 
+    Tutorials on imaging, computing and mathematics. matthew-brett.github.io/teaching, 
+    Accessed July 2022.
+    """
+    def __init__(self, fwhm=None):
+        smoother.__init__(self)
+        self.fwhm = self.check_fwhm(fwhm)
+
+    def fit(self, x, y, plot=False, confidence_interval=False):
+        """
+        Given arrays x and y, computes smoothed y values.
+        """
+        # Validate x and y input
+        if len(x) != len(y):
+            raise ValueError('x and y must be of the same length')
+
+        # Initiliaze smoothed value array
+        self.smoothed_ys = np.zeros(y.shape)
+    
+        # Sort array for kernel + FWHM calculation
+        y = y[x.argsort()]
+        x = np.sort(x)
+
+        # Set FWHM + calculate sigma
+        if self.fwhm == None:
+            self.fwhm = (x[-1] - x[0]) / 25
+        sigma = self.fwhm_to_sigma(self.fwhm)
+
+        # Calculate kernel at each point
+        for i, x_position in enumerate(x):
+            kernel = self.kernel_at_position(x, x_position, sigma)
+            kernel = kernel / sum(kernel)
+            self.smoothed_ys[i] = sum(y * kernel)
+        
+        # Storing residuals
+        self.residuals = y - self.smoothed_ys
+
+        # Plot model
+        if plot:
+            self.plot_model(x, y, confidence_interval)
+
+    def plot_model(self, x, y, confidence_interval=False):
+        '''
+        Plots the models hypothetical predictions, MSE, and true data points.
+        '''
+        # Plot model + data points
+        plt.plot(x, self.smoothed_ys, color='tab:orange')
+        plt.scatter(x, y)
+
+        # MSE + title
+        MSE = np.mean((self.residuals) ** 2)
+        plt.title("{}, FWHM: {}, MSE: {:.4f}".format(type(self).__name__, self.fwhm, MSE))
+
+        # Optional: Plot confidence interval
+        if confidence_interval:
+            band_size = self.get_confidence_interval(confidence_interval)
+            plt.fill_between(x.flatten(), self.smoothed_ys - band_size, self.smoothed_ys + band_size, color='tab:blue', alpha=0.2)
+            plt.title("{}, FWHM: {}, MSE: {:.4f}, Confidence Interval: {:.8g}%".format(type(self).__name__, self.fwhm, MSE, confidence_interval*100))
+        plt.show()
+
+    def fwhm_to_sigma(self, fwhm):
+        """
+        The FWHM is the full width of the kernel at half the maximum height 
+        of the Gaussian function. For a Gaussian function with standard deviation 
+        1, the maximum height is ~0.4. The width of the kernel at 0.2 to 0.2 (on the Y axis) 
+        is the FWHM.
+
+        This function takes in a FWHM value and returns sigma (a standard deviation).
+
+        Formula: https://en.wikipedia.org/wiki/Full_width_at_half_maximum
+        """
+        return fwhm / (2 * np.sqrt(2 * np.log(2)))
+
+    def kernel_at_position(self, x, x_position, sigma):
+        """
+        At a given index denoted x_position, returns the kernel 
+        weights over array x.
+
+        Formula: https://en.wikipedia.org/wiki/Gaussian_filter
+        """
+        kernel = np.exp(-(x - x_position) ** 2 / (2 * sigma ** 2))
+        kernel = kernel / sum(kernel)
+        return kernel
+
+    @staticmethod
+    def check_fwhm(fwhm):
+        '''
+        Validate fwhm input.
+        '''
+        if fwhm == None:
+            return None
+        if type(fwhm) != float and type(fwhm) != int:
+            raise TypeError('fwhm must be a float or int')
+        return fwhm
+
+class knn_kernel(smoother):
+    def __init__(self, n):
+        smoother.__init__(self)
+        self.n = self.check_n_input(n)
+
+    def fit(self, x, y, plot=False, confidence_interval=False):
+        """
+        Given arrays x and y, computes smoothed y values.
+        """
+        # Validate x and y input
+        if len(x) != len(y):
+            raise ValueError('x and y must be of the same length')
+        if self.n > len(x):
+            raise ValueError('max N value is len(x)')
+    
+        # Sort array for kernel calculation
+        y = y[x.argsort()]
+        x = np.sort(x)
+
+        # Calculate smoothed ys + storing residuals
+        self.smoothed_ys = self.find_closest_n_points(x, y)
+        self.residuals = y - self.smoothed_ys
+
+        # Plot model
+        if plot:
+            self.plot_model(x, y, confidence_interval)
+
+    def plot_model(self, x, y, confidence_interval=False):
+        '''
+        Plots the models hypothetical predictions, MSE, and true data points.
+        '''
+        # Plot model + data points
+        plt.plot(x, self.smoothed_ys, color='tab:orange')
+        plt.scatter(x, y)
+
+        # MSE + title
+        MSE = np.mean((self.residuals) ** 2)
+        plt.title("{}, n: {}, MSE: {:.4f}".format(type(self).__name__, self.n, MSE))
+
+        # Optional Param: Plot confidence interval
+        if confidence_interval:
+            band_size = self.get_confidence_interval(confidence_interval)
+            plt.fill_between(x.flatten(), self.smoothed_ys - band_size, self.smoothed_ys + band_size, color='tab:blue', alpha=0.2)
+            plt.title("{}, n: {}, MSE: {:.4f}, Confidence Interval: {:.8g}%".format(type(self).__name__, self.n, MSE, confidence_interval*100))
+        plt.show()
+
+    def find_closest_n_points(self, x, y):
+        """
+        Calculates KNN for all points in array y given x and y.
+        """
+        smoothed_values = np.zeros(len(x))
+
+        # Calculate kernel for every x_value
+        for i, x_value in enumerate(x):
+
+            closest_points = [0] * self.n
+            pi = 0
+            li = np.searchsorted(x, x_value)
+
+            # Set starting point in array as its position
+            if li == 0:
+                ri = 1
+            elif li == len(x) - 1:
+                ri = li
+                li -= 1
+            else:
+                if abs(x_value - x[li]) < abs(x_value - x[li+1]):
+                    ri = li
+                    li -= 1
+                else:
+                    ri = li + 1
+
+            # Find up to the closest n points
+            for j in range(self.n):
+                if li >= 0 and ri < len(x):
+                    if abs(x_value - x[li]) < abs(x_value - x[ri]):
+                        closest_points[pi] = y[li]
+                        li -= 1
+                    else:
+                        closest_points[pi] = y[ri]
+                        ri += 1
+                # If border reached, return current closest values,
+                # otherwise smoothed values at edges are horizontal lines
+                else:
+                    break
+                pi+=1
+
+            smoothed_values[i] = np.mean(closest_points[:j+1])
+
+        return smoothed_values
+
+    @staticmethod
+    def check_n_input(n):
+        '''
+        Validate n parameter.
+        '''
+        if type(n) != int:
+            raise TypeError('n must be an integer')
+        if n < 1:
+            raise ValueError('n must be >= 1')
+        return n
 
 if __name__ == '__main__':
     main()
