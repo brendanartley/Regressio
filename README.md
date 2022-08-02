@@ -116,7 +116,7 @@ model.fit(x, y, plot=True, confidence_interval=0.90)
 ```
 <img alt="Exponential moving average" src="https://github.com/brendanartley/Regressio/blob/main/imgs/exponential_smoother.png?raw=true" width="650">
 
-For more examples, navigate to the [examples.ipynb](examples.ipynb) file in this repository.
+For more examples, navigate to the [examples.ipynb](https://github.com/brendanartley/Regressio/blob/main/examples.ipynb) file in this repository.
 
 ## Contributions
 
