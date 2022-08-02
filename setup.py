@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import pathlib
 
-VERSION = '1.0.0'
+VERSION = '1.0.1'
 PACKAGE_NAME = 'regressio'
 AUTHOR = 'Brendan Artley'
 AUTHOR_EMAIL = 'brendanartley@gmail.com'
@@ -27,6 +27,6 @@ setup(name=PACKAGE_NAME,
       author_email=AUTHOR_EMAIL,
       url=URL,
       install_requires=INSTALL_REQUIRES,
-      python_requires='>=3',
+      python_requires='>=3.8',
       packages=find_packages()
       )
