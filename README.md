@@ -133,3 +133,16 @@ If you have a complex feature in mind or find a large bug in the code, please cr
 - Li, Bao, (2022). Stat 508: Applied Data Mining, Statistical Learning: Stat Online. PennState: Statistics Online Courses, online.stat.psu.edu/stat508, Accessed July 2022.
 
 - Brett, M. (2014, October 26). An introduction to smoothing. Tutorials on imaging, computing and mathematics. matthew-brett.github.io/teaching, Accessed July 2022.
+
+## BibText
+
+```
+@misc{Regressio,
+      title={Regressio: A python module for univariate regression, interpolation, and smoothing}, 
+      author={Brendan Artley},
+      year={2022},
+      publisher={GitHub},
+      journal={GitHub repository},
+      Howpublished = {\url{https://github.com/brendanartley/Regressio}}
+}
+```
