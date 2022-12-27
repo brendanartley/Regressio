@@ -8,27 +8,6 @@ Pytest:
 - prefix your class with 'Test', and functions with 'test' otherwise they will be skipped.
 '''
 
-class Test_smoother_class:
-    def test_negative_ci(self):
-        with pytest.raises(ValueError):
-            x, y = generate_random_walk(100)
-            model = linear_regression(5)
-            model.fit(x, y, plot=True, confidence_interval=-0.5)
-    
-    def test_too_large_ci(self):
-        with pytest.raises(ValueError):
-            x, y = generate_random_walk(100)
-            model = linear_regression(5)
-            model.fit(x, y, plot=True, confidence_interval=2.5)
-
-    def test_1_edge_case(self):
-        # Test edge case where ci is 1.0
-        with pytest.raises(ValueError):
-            x, y = generate_random_walk(100)
-            model = linear_regression(5)
-            model.fit(x, y, plot=True, confidence_interval=1.0)
-
-
 class Test_generate_random_walk: 
     def test_positive(self):
         x, y = generate_random_walk(10, 1)
