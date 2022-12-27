@@ -27,6 +27,6 @@ setup(name=PACKAGE_NAME,
       author_email=AUTHOR_EMAIL,
       url=URL,
       install_requires=INSTALL_REQUIRES,
-      python_requires='>=3.8',
+      python_requires='>=3.0',
       packages=find_packages()
       )
